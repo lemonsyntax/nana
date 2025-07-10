@@ -3,10 +3,9 @@
 Data Collection Module for Student Performance Prediction
 
 This module handles:
-1. UCI Student Performance Dataset loading
-2. Custom CSV data loading
-3. Data validation and basic cleaning
-4. Data source management
+1. Student Performance CSV data loading
+2. Data validation and basic cleaning
+3. Data source management
 """
 
 import pandas as pd
@@ -18,21 +17,18 @@ import warnings
 warnings.filterwarnings('ignore')
 
 class DataCollector:
-    """Handles data collection from the user's CSV file only"""
+    """Handles data collection from the Student Performance CSV file"""
     
     def __init__(self):
         pass
     
-    def load_csv(self, filepath: Optional[str] = None) -> pd.DataFrame:
+    def load_csv(self) -> pd.DataFrame:
         """
-        Load the user's Student Performance CSV file
-        Args:
-            filepath: Path to CSV file (default: data/StudentPerformanceFactors.csv)
+        Load the Student Performance CSV file
         Returns:
             DataFrame with student performance data
         """
-        if filepath is None:
-            filepath = 'data/StudentPerformanceFactors.csv'
+        filepath = 'data/StudentPerformanceFactors.csv'
         if not os.path.exists(filepath):
             raise FileNotFoundError(f"File not found: {filepath}")
         print(f"Loading dataset from: {filepath}")
@@ -80,10 +76,10 @@ class DataCollector:
         print(f"Dataset saved to: {filepath}")
 
 def main():
-    """Test the data collection module (user CSV only)"""
+    """Test the data collection module"""
     collector = DataCollector()
     print("=" * 60)
-    print("DATA COLLECTION MODULE TEST (USER CSV)")
+    print("DATA COLLECTION MODULE TEST")
     print("=" * 60)
     df = collector.load_csv()
     info = collector.get_data_info(df)

@@ -25,6 +25,13 @@ from typing import Dict, Any, Tuple, Optional, List
 import warnings
 warnings.filterwarnings('ignore')
 
+# Suppress TensorFlow deprecation warnings
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # Suppress TF logging
+os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'  # Suppress oneDNN warnings
+warnings.filterwarnings('ignore', category=DeprecationWarning, module='tensorflow')
+warnings.filterwarnings('ignore', category=FutureWarning, module='tensorflow')
+
 class StudentPerformanceModel:
     """Neural network model for student performance prediction"""
     
@@ -71,15 +78,14 @@ class StudentPerformanceModel:
                 'output_activation': 'linear' if self.problem_type == 'regression' else 'sigmoid'
             }
         
-        # Build model
+        # Always create a new Sequential model to avoid naming conflicts
         model = tf.keras.Sequential()
         
         # Input layer
         model.add(layers.Dense(
             architecture['hidden_layers'][0],
             activation=architecture['activation'],
-            input_shape=(self.input_dim,),
-            name='input_layer'
+            input_shape=(self.input_dim,)
         ))
         model.add(layers.Dropout(architecture['dropout_rate']))
         model.add(layers.BatchNormalization())
@@ -88,17 +94,16 @@ class StudentPerformanceModel:
         for i, units in enumerate(architecture['hidden_layers'][1:], 1):
             model.add(layers.Dense(
                 units,
-                activation=architecture['activation'],
-                name=f'hidden_layer_{i}'
+                activation=architecture['activation']
             ))
             model.add(layers.Dropout(architecture['dropout_rate']))
             model.add(layers.BatchNormalization())
         
         # Output layer
         if self.problem_type == 'regression':
-            model.add(layers.Dense(1, activation=architecture['output_activation'], name='output_layer'))
+            model.add(layers.Dense(1, activation=architecture['output_activation']))
         else:
-            model.add(layers.Dense(1, activation=architecture['output_activation'], name='output_layer'))
+            model.add(layers.Dense(1, activation=architecture['output_activation']))
         
         # Compile model
         if self.problem_type == 'regression':
@@ -134,7 +139,8 @@ class StudentPerformanceModel:
             Training history
         """
         if self.model is None:
-            self.build_model()
+            # Model should be built before calling train method
+            raise ValueError("Model must be built before training. Call build_model() first.")
         
         if training_config is None:
             training_config = {
@@ -169,7 +175,7 @@ class StudentPerformanceModel:
         
         # Model checkpoint
         checkpoint = callbacks.ModelCheckpoint(
-            'best_model.h5',
+            'best_model.keras',
             monitor='val_loss',
             save_best_only=True,
             verbose=1
@@ -404,7 +410,7 @@ class StudentPerformanceModel:
         
         return importance
     
-    def save_model(self, model_path: str = 'student_performance_model.h5') -> None:
+    def save_model(self, model_path: str = 'student_performance_model.keras') -> None:
         """
         Save the trained model
         
@@ -417,7 +423,7 @@ class StudentPerformanceModel:
         self.model.save(model_path)
         print(f"Model saved to {model_path}")
     
-    def load_model(self, model_path: str = 'student_performance_model.h5') -> None:
+    def load_model(self, model_path: str = 'student_performance_model.keras') -> None:
         """
         Load a trained model
         

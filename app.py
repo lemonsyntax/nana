@@ -134,7 +134,7 @@ def load_model_and_preprocessor():
         if not os.path.exists(models_dir):
             return None, None
         
-        model_files = [f for f in os.listdir(models_dir) if f.endswith('.h5')]
+        model_files = [f for f in os.listdir(models_dir) if f.endswith('.keras')]
         preprocessor_files = [f for f in os.listdir(models_dir) if f.endswith('.pkl')]
         
         if not model_files or not preprocessor_files:
@@ -207,11 +207,11 @@ def show_home_page(df):
     st.markdown("""
     ## 🎯 Welcome to the Student Performance Prediction System!
     
-    This intelligent system helps predict student academic performance based on various factors that influence learning outcomes.
+    This intelligent system helps predict student exam scores based on various factors that influence learning outcomes using our comprehensive dataset.
     
     ### ✨ What You Can Do:
     
-    - **📈 Make Predictions**: Input student information and get accurate grade predictions
+    - **📈 Make Predictions**: Input student information and get accurate exam score predictions
     - **📊 Explore Insights**: Understand what factors most influence academic success
     - **🎯 Get Recommendations**: Receive personalized insights for improvement
     
@@ -219,14 +219,14 @@ def show_home_page(df):
     
     | Category | Examples |
     |----------|----------|
-    | **Academic History** | Previous grades, study time, attendance |
-    | **Personal Factors** | Age, health, motivation |
-    | **Family Background** | Parental education, family support |
-    | **Lifestyle** | Free time activities, social life |
-    | **Support Systems** | School support, extra classes |
+    | **Study Habits** | Hours studied, attendance rate |
+    | **Academic History** | Previous test scores |
+    | **Family Background** | Parental education level |
+    | **Activities** | Extracurricular participation |
+    | **Support Systems** | Access to resources, tutoring |
     
     ### 🎯 Prediction Target:
-    - **Final Grade (G3)**: Predicted final grade on a 0-20 scale
+    - **Exam Score**: Predicted exam score on a 0-100 scale
     """)
     
     if df is not None:
@@ -236,20 +236,29 @@ def show_home_page(df):
         with col1:
             st.metric("📚 Total Students", len(df), help="Number of students in our dataset")
         with col2:
-            st.metric("📊 Average Grade", f"{df['G3'].mean():.1f}", help="Average final grade across all students")
+            st.metric("📊 Average Exam Score", f"{df['Exam_Score'].mean():.1f}", help="Average exam score across all students")
         with col3:
-            st.metric("🏆 Highest Grade", f"{df['G3'].max():.1f}", help="Best performing student's grade")
+            st.metric("🏆 Highest Score", f"{df['Exam_Score'].max():.1f}", help="Best performing student's score")
         with col4:
-            st.metric("📈 Lowest Grade", f"{df['G3'].min():.1f}", help="Lowest performing student's grade")
+            st.metric("📈 Lowest Score", f"{df['Exam_Score'].min():.1f}", help="Lowest performing student's score")
         
         # Quick visualization
-        st.markdown("### 📊 Grade Distribution")
-        fig = px.histogram(df, x='G3', nbins=20, 
-                          title="Distribution of Final Grades",
-                          labels={'G3': 'Final Grade', 'count': 'Number of Students'},
+        st.markdown("### 📊 Exam Score Distribution")
+        fig = px.histogram(df, x='Exam_Score', nbins=20, 
+                          title="Distribution of Exam Scores",
+                          labels={'Exam_Score': 'Exam Score', 'count': 'Number of Students'},
                           color_discrete_sequence=['#667eea'])
         fig.update_layout(showlegend=False, height=400)
         st.plotly_chart(fig, use_container_width=True)
+        
+        # Show dataset info
+        st.markdown("### 📋 Dataset Information")
+        st.info(f"""
+        **Dataset**: StudentPerformanceFactors.csv
+        **Features**: {len(df.columns)} columns including study habits, academic history, and demographic factors
+        **Target**: Exam_Score (0-100 scale)
+        **Data Quality**: Clean dataset with comprehensive student information
+        """)
 
 def show_prediction_page(model, preprocessor):
     """Display the prediction page (updated UI)"""
@@ -301,17 +310,17 @@ def show_analysis_page(df):
         st.metric("📚 Total Students", len(df))
         st.metric("📊 Features", len(df.columns))
     with col2:
-        st.metric("📈 Average Final Grade", f"{df['G3'].mean():.1f}")
-        st.metric("📊 Grade Std Dev", f"{df['G3'].std():.1f}")
+        st.metric("📈 Average Exam Score", f"{df['Exam_Score'].mean():.1f}")
+        st.metric("📊 Score Std Dev", f"{df['Exam_Score'].std():.1f}")
     with col3:
-        st.metric("👨 Male Students", f"{len(df[df['sex'] == 'M'])} ({len(df[df['sex'] == 'M'])/len(df)*100:.1f}%)")
-        st.metric("👩 Female Students", f"{len(df[df['sex'] == 'F'])} ({len(df[df['sex'] == 'F'])/len(df)*100:.1f}%)")
+        st.metric("👨 Male Students", f"{len(df[df['Gender'] == 'Male'])} ({len(df[df['Gender'] == 'Male'])/len(df)*100:.1f}%)")
+        st.metric("👩 Female Students", f"{len(df[df['Gender'] == 'Female'])} ({len(df[df['Gender'] == 'Female'])/len(df)*100:.1f}%)")
     
-    # Grade distribution
-    st.markdown("### 📊 Grade Distribution")
-    fig = px.histogram(df, x='G3', nbins=20, 
-                      title="Distribution of Final Grades",
-                      labels={'G3': 'Final Grade', 'count': 'Number of Students'},
+    # Exam score distribution
+    st.markdown("### 📊 Exam Score Distribution")
+    fig = px.histogram(df, x='Exam_Score', nbins=20, 
+                      title="Distribution of Exam Scores",
+                      labels={'Exam_Score': 'Exam Score', 'count': 'Number of Students'},
                       color_discrete_sequence=['#667eea'])
     fig.update_layout(showlegend=False, height=400)
     st.plotly_chart(fig, use_container_width=True)
@@ -320,12 +329,12 @@ def show_analysis_page(df):
     st.markdown("### 🔗 Feature Correlations")
     
     numeric_cols = df.select_dtypes(include=[np.number]).columns
-    correlations = df[numeric_cols].corr()['G3'].sort_values(ascending=False)
-    correlations = correlations[correlations.index != 'G3']
+    correlations = df[numeric_cols].corr()['Exam_Score'].sort_values(ascending=False)
+    correlations = correlations[correlations.index != 'Exam_Score']
     
     fig = px.bar(x=correlations.values, y=correlations.index, 
                  orientation='h',
-                 title="Feature Correlations with Final Grade (G3)",
+                 title="Feature Correlations with Exam Score",
                  labels={'x': 'Correlation Coefficient', 'y': 'Features'},
                  color=correlations.values,
                  color_continuous_scale='RdBu')
@@ -340,18 +349,25 @@ def show_analysis_page(df):
     with tab1:
         st.markdown("#### Academic Performance Factors")
         
-        # G1 vs G3
-        fig = px.scatter(df, x='G1', y='G3', color='sex',
-                        title="First Period Grade vs Final Grade",
-                        labels={'G1': 'First Period Grade', 'G3': 'Final Grade'},
-                        color_discrete_map={'M': '#667eea', 'F': '#764ba2'})
+        # Previous scores vs Exam score
+        fig = px.scatter(df, x='Previous_Scores', y='Exam_Score', color='Gender',
+                        title="Previous Scores vs Exam Score",
+                        labels={'Previous_Scores': 'Previous Scores', 'Exam_Score': 'Exam Score'},
+                        color_discrete_map={'Male': '#667eea', 'Female': '#764ba2'})
         st.plotly_chart(fig, use_container_width=True)
         
-        # Study time analysis
-        study_time_stats = df.groupby('studytime')['G3'].agg(['mean', 'count']).reset_index()
-        fig = px.bar(study_time_stats, x='studytime', y='mean',
-                    title="Average Final Grade by Study Time",
-                    labels={'studytime': 'Study Time', 'mean': 'Average Final Grade'},
+        # Hours studied analysis
+        fig = px.scatter(df, x='Hours_Studied', y='Exam_Score',
+                        title="Hours Studied vs Exam Score",
+                        labels={'Hours_Studied': 'Hours Studied', 'Exam_Score': 'Exam Score'},
+                        color_discrete_sequence=['#667eea'])
+        st.plotly_chart(fig, use_container_width=True)
+        
+        # Attendance analysis
+        attendance_stats = df.groupby('Attendance')['Exam_Score'].agg(['mean', 'count']).reset_index()
+        fig = px.bar(attendance_stats, x='Attendance', y='mean',
+                    title="Average Exam Score by Attendance",
+                    labels={'Attendance': 'Attendance', 'mean': 'Average Exam Score'},
                     color_discrete_sequence=['#667eea'])
         st.plotly_chart(fig, use_container_width=True)
     
@@ -359,38 +375,39 @@ def show_analysis_page(df):
         st.markdown("#### Demographic Analysis")
         
         # Gender analysis
-        gender_stats = df.groupby('sex')['G3'].agg(['mean', 'count']).reset_index()
-        fig = px.bar(gender_stats, x='sex', y='mean',
-                    title="Average Final Grade by Gender",
-                    labels={'sex': 'Gender', 'mean': 'Average Final Grade'},
+        gender_stats = df.groupby('Gender')['Exam_Score'].agg(['mean', 'count']).reset_index()
+        fig = px.bar(gender_stats, x='Gender', y='mean',
+                    title="Average Exam Score by Gender",
+                    labels={'Gender': 'Gender', 'mean': 'Average Exam Score'},
                     color_discrete_sequence=['#667eea', '#764ba2'])
         st.plotly_chart(fig, use_container_width=True)
         
-        # Age analysis
-        age_stats = df.groupby('age')['G3'].agg(['mean', 'count']).reset_index()
-        fig = px.bar(age_stats, x='age', y='mean',
-                    title="Average Final Grade by Age",
-                    labels={'age': 'Age', 'mean': 'Average Final Grade'},
+        # Parental education analysis
+        edu_stats = df.groupby('Parental_Education_Level')['Exam_Score'].agg(['mean', 'count']).reset_index()
+        fig = px.bar(edu_stats, x='Parental_Education_Level', y='mean',
+                    title="Average Exam Score by Parental Education Level",
+                    labels={'Parental_Education_Level': 'Parental Education Level', 'mean': 'Average Exam Score'},
                     color_discrete_sequence=['#667eea'])
         st.plotly_chart(fig, use_container_width=True)
     
     with tab3:
         st.markdown("#### Lifestyle Factors")
         
-        # Health vs Grade
-        health_stats = df.groupby('health')['G3'].agg(['mean', 'count']).reset_index()
-        fig = px.bar(health_stats, x='health', y='mean',
-                    title="Average Final Grade by Health Status",
-                    labels={'health': 'Health Status', 'mean': 'Average Final Grade'},
+        # Extracurricular activities
+        extra_stats = df.groupby('Extracurricular_Activities')['Exam_Score'].agg(['mean', 'count']).reset_index()
+        fig = px.bar(extra_stats, x='Extracurricular_Activities', y='mean',
+                    title="Average Exam Score by Extracurricular Participation",
+                    labels={'Extracurricular_Activities': 'Extracurricular Activities', 'mean': 'Average Exam Score'},
                     color_discrete_sequence=['#667eea'])
         st.plotly_chart(fig, use_container_width=True)
         
-        # Absences vs Grade
-        fig = px.scatter(df, x='absences', y='G3',
-                        title="Absences vs Final Grade",
-                        labels={'absences': 'Number of Absences', 'G3': 'Final Grade'},
-                        color_discrete_sequence=['#667eea'])
-        st.plotly_chart(fig, use_container_width=True)
+        # Sleep hours vs Exam score
+        if 'Sleep_Hours' in df.columns:
+            fig = px.scatter(df, x='Sleep_Hours', y='Exam_Score',
+                            title="Sleep Hours vs Exam Score",
+                            labels={'Sleep_Hours': 'Sleep Hours', 'Exam_Score': 'Exam Score'},
+                            color_discrete_sequence=['#667eea'])
+            st.plotly_chart(fig, use_container_width=True)
 
 def show_about_page():
     """Display the about page"""
@@ -434,7 +451,7 @@ def show_about_page():
     
     ### 🎯 Our Predictions
     
-    - **Target**: Final Grade (G3) on a 0-20 scale
+    - **Target**: Exam Score on a 0-100 scale
     - **Accuracy**: High precision predictions based on comprehensive data analysis
     - **Interpretation**: Clear grade levels (A-F) with actionable insights
     

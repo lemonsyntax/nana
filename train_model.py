@@ -21,6 +21,13 @@ from datetime import datetime
 import warnings
 warnings.filterwarnings('ignore')
 
+# Suppress TensorFlow deprecation warnings
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # Suppress TF logging
+os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'  # Suppress oneDNN warnings
+warnings.filterwarnings('ignore', category=DeprecationWarning, module='tensorflow')
+warnings.filterwarnings('ignore', category=FutureWarning, module='tensorflow')
+
 # Import our modules
 from data_collection import DataCollector
 from data_preprocessing import DataPreprocessor
@@ -130,9 +137,9 @@ class ModelTrainer:
             raise
     
     def _collect_data(self) -> pd.DataFrame:
-        """Collect and prepare the dataset (CSV only)"""
+        """Collect and prepare the dataset"""
         print("Loading StudentPerformanceFactors.csv dataset...")
-        df = pd.read_csv('data/StudentPerformanceFactors.csv')
+        df = self.collector.load_csv()
         info = {'shape': df.shape, 'target_column': 'Exam_Score'}
         self.results['data_info'] = info
         print(f"Dataset loaded: {info['shape'][0]} samples, {info['shape'][1]} features")
@@ -265,16 +272,16 @@ class ModelTrainer:
         numeric_df = df.select_dtypes(include=[np.number])
         
         # Check if target column exists in numeric data
-        if 'G3' not in numeric_df.columns:
-            print("Warning: Target column 'G3' not found in numeric data. Skipping correlation analysis.")
+        if 'Exam_Score' not in numeric_df.columns:
+            print("Warning: Target column 'Exam_Score' not found in numeric data. Skipping correlation analysis.")
             return
         
         # Calculate correlations with target
-        correlations = numeric_df.corr()['G3'].sort_values(ascending=False)
+        correlations = numeric_df.corr()['Exam_Score'].sort_values(ascending=False)
         
         plt.figure(figsize=(10, 8))
-        correlations[correlations.index != 'G3'].plot(kind='bar', color='lightcoral')
-        plt.title('Feature Correlations with Final Grade (G3)')
+        correlations[correlations.index != 'Exam_Score'].plot(kind='bar', color='lightcoral')
+        plt.title('Feature Correlations with Exam Score')
         plt.xlabel('Features')
         plt.ylabel('Correlation Coefficient')
         plt.xticks(rotation=45, ha='right')
@@ -288,7 +295,7 @@ class ModelTrainer:
         
         # Save model
         if self.config['evaluation']['save_model']:
-            model_path = f"models/student_performance_model_{datetime.now().strftime('%Y%m%d_%H%M%S')}.h5"
+            model_path = f"models/student_performance_model_{datetime.now().strftime('%Y%m%d_%H%M%S')}.keras"
             self.model.save_model(model_path)
             self.results['model_path'] = model_path
         
