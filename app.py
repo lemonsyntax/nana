@@ -16,6 +16,7 @@ import numpy as np
 import plotly.express as px
 import os
 import joblib
+from sklearn.model_selection import train_test_split
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -135,20 +136,77 @@ def load_model_and_preprocessor():
             return None, None
         
         model_files = [f for f in os.listdir(models_dir) if f.endswith('.keras')]
-        preprocessor_files = [f for f in os.listdir(models_dir) if f.endswith('.pkl')]
         
-        if not model_files or not preprocessor_files:
+        if not model_files:
             return None, None
         
         latest_model = sorted(model_files)[-1]
-        latest_preprocessor = sorted(preprocessor_files)[-1]
-        
         model_path = os.path.join(models_dir, latest_model)
-        preprocessor_path = os.path.join(models_dir, latest_preprocessor)
         
-        model = StudentPerformanceModel(input_dim=50)
-        model.load_model(model_path)
-        preprocessor = joblib.load(preprocessor_path)
+        # Load the existing model first to check its input dimension
+        temp_model = StudentPerformanceModel(input_dim=5)  # Try with 5 features first
+        try:
+            temp_model.load_model(model_path)
+            # If successful, the model expects 5 features
+            input_dim = 5
+            use_enhanced_features = False
+        except:
+            # If failed, try with more features
+            temp_model = StudentPerformanceModel(input_dim=13)
+            try:
+                temp_model.load_model(model_path)
+                input_dim = 13
+                use_enhanced_features = True
+            except:
+                st.error("❌ Could not load model with any input dimension")
+                return None, None
+        
+        # Create preprocessor based on model compatibility
+        if use_enhanced_features:
+            # Use enhanced preprocessor with all features
+            preprocessor = DataPreprocessor()
+            collector = DataCollector()
+            df = collector.load_csv()
+            if df is not None:
+                X_train, X_test, y_train, y_test = preprocessor.preprocess_data(df)
+                model = StudentPerformanceModel(input_dim=input_dim)
+                model.load_model(model_path)
+                st.success(f"✅ Enhanced preprocessor loaded! Using {input_dim} features.")
+            else:
+                st.error("❌ Could not load dataset")
+                return None, None
+        else:
+            # Use simplified preprocessor with only 5 features
+            preprocessor = DataPreprocessor()
+            collector = DataCollector()
+            df = collector.load_csv()
+            if df is not None:
+                # Use only the original 5 features
+                required_cols = ['Hours_Studied', 'Previous_Scores', 'Attendance', 
+                               'Extracurricular_Activities', 'Parental_Education_Level', 'Exam_Score']
+                df_simple = df[required_cols].copy()
+                
+                # Simple preprocessing for 5 features
+                df_simple['Extracurricular_Activities'] = df_simple['Extracurricular_Activities'].replace({'Yes': 1, 'No': 0, 'yes': 1, 'no': 0}).fillna(0).astype(int)
+                edu_map = {'High School': 1, 'College': 2, 'Undergraduate': 2, 'Graduate': 3, 'Postgraduate': 4, 1: 1, 2: 2, 3: 3, 4: 4}
+                df_simple['Parental_Education_Level'] = df_simple['Parental_Education_Level'].replace(edu_map).fillna(1).astype(int)
+                df_simple = df_simple.fillna(df_simple.mean(numeric_only=True))
+                
+                X = df_simple.drop(columns=['Exam_Score'])
+                y = df_simple['Exam_Score']
+                X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+                
+                # Fit scaler
+                preprocessor.scaler.fit(X_train)
+                preprocessor.feature_columns = X.columns.tolist()
+                preprocessor.is_fitted = True
+                
+                model = StudentPerformanceModel(input_dim=input_dim)
+                model.load_model(model_path)
+                st.warning(f"⚠️ Using simplified preprocessor with {input_dim} features. Consider retraining with enhanced features.")
+            else:
+                st.error("❌ Could not load dataset")
+                return None, None
         
         return model, preprocessor
         
@@ -271,15 +329,57 @@ def show_prediction_page(model, preprocessor):
 
     with st.form("prediction_form"):
         st.markdown("### Enter Student Data to Predict Performance")
-        hours_studied = st.number_input("Hours Studied", min_value=0.0, max_value=100.0, value=5.0, help="Enter the number of hours the student studied for the exam.")
-        previous_score = st.number_input("Previous Test Score", min_value=0.0, max_value=100.0, value=75.0, help="Enter the score from the student's previous test (0-100).")
-        attendance = st.number_input("Attendance Percentage", min_value=0.0, max_value=100.0, value=90.0, help="Enter the attendance rate in percentage (0-100%).")
-        extracurricular = st.selectbox("Extra-Curricular Participation (Yes=1, No=0)", options=[1, 0], format_func=lambda x: "Yes" if x == 1 else "No", help="Enter 1 if the student participates in extra-curricular activities, 0 otherwise.")
-        parent_edu = st.selectbox("Parent's Education Level (1=High School, 2=Undergraduate, 3=Graduate)", options=[1, 2, 3], format_func=lambda x: {1: 'High School', 2: 'Undergraduate', 3: 'Graduate'}[x], help="Enter the highest education level of the student's parents: 1 for High School, 2 for Undergraduate, and 3 for Graduate.")
-        submitted = st.form_submit_button("Predict")
+        
+        # Core academic features
+        col1, col2 = st.columns(2)
+        with col1:
+            hours_studied = st.number_input("Hours Studied", min_value=0.0, max_value=100.0, value=5.0, help="Enter the number of hours the student studied for the exam.")
+            previous_score = st.number_input("Previous Test Score", min_value=0.0, max_value=100.0, value=75.0, help="Enter the score from the student's previous test (0-100).")
+            attendance = st.number_input("Attendance Percentage", min_value=0.0, max_value=100.0, value=90.0, help="Enter the attendance rate in percentage (0-100%).")
+        
+        with col2:
+            extracurricular = st.selectbox("Extra-Curricular Activities", options=[1, 0], format_func=lambda x: "Yes" if x == 1 else "No", help="Does the student participate in extra-curricular activities?")
+            parent_edu = st.selectbox("Parent's Education Level", options=[1, 2, 3, 4], format_func=lambda x: {1: 'High School', 2: 'College/Undergraduate', 3: 'Graduate', 4: 'Postgraduate'}[x], help="Highest education level of the student's parents")
+        
+        # Additional features (only show if using enhanced preprocessor)
+        additional_features = {}
+        
+        # Check if we're using enhanced features (more than 5 features)
+        if len(preprocessor.get_feature_names()) > 5:
+            st.markdown("### Additional Factors")
+            
+            # Check if additional features are available and add them to the form
+            if 'Sleep_Hours' in preprocessor.get_feature_names():
+                additional_features['sleep_hours'] = st.number_input("Sleep Hours per Night", min_value=0.0, max_value=24.0, value=8.0, help="Average hours of sleep per night")
+            
+            if 'Motivation_Level' in preprocessor.get_feature_names():
+                additional_features['motivation'] = st.selectbox("Motivation Level", options=[1, 2, 3], format_func=lambda x: {1: 'Low', 2: 'Medium', 3: 'High'}[x], help="Student's motivation level")
+            
+            if 'Tutoring_Sessions' in preprocessor.get_feature_names():
+                additional_features['tutoring'] = st.number_input("Tutoring Sessions", min_value=0, max_value=50, value=0, help="Number of tutoring sessions attended")
+            
+            if 'Family_Income' in preprocessor.get_feature_names():
+                additional_features['family_income'] = st.selectbox("Family Income Level", options=[1, 2, 3], format_func=lambda x: {1: 'Low', 2: 'Medium', 3: 'High'}[x], help="Family income level")
+            
+            if 'Teacher_Quality' in preprocessor.get_feature_names():
+                additional_features['teacher_quality'] = st.selectbox("Teacher Quality", options=[1, 2, 3], format_func=lambda x: {1: 'Low', 2: 'Medium', 3: 'High'}[x], help="Perceived quality of teaching")
+            
+            if 'Peer_Influence' in preprocessor.get_feature_names():
+                additional_features['peer_influence'] = st.selectbox("Peer Influence", options=[1, 2, 3], format_func=lambda x: {1: 'Negative', 2: 'Neutral', 3: 'Positive'}[x], help="Influence of peers on academic performance")
+            
+            if 'Physical_Activity' in preprocessor.get_feature_names():
+                additional_features['physical_activity'] = st.selectbox("Physical Activity", options=[1, 0], format_func=lambda x: "Yes" if x == 1 else "No", help="Does the student engage in regular physical activity?")
+            
+            if 'Internet_Access' in preprocessor.get_feature_names():
+                additional_features['internet_access'] = st.selectbox("Internet Access", options=[1, 0], format_func=lambda x: "Yes" if x == 1 else "No", help="Does the student have reliable internet access?")
+        else:
+            st.info("💡 Using simplified model with 5 core features. For enhanced predictions with more factors, retrain the model.")
+        
+        submitted = st.form_submit_button("🎯 Predict Performance")
 
         if submitted:
             try:
+                # Create input data with all available features
                 input_data = {
                     'Hours_Studied': hours_studied,
                     'Previous_Scores': previous_score,
@@ -287,12 +387,78 @@ def show_prediction_page(model, preprocessor):
                     'Extracurricular_Activities': extracurricular,
                     'Parental_Education_Level': parent_edu
                 }
+                
+                # Add additional features from the form (only if using enhanced preprocessor)
+                if len(preprocessor.get_feature_names()) > 5:
+                    feature_mapping = {
+                        'sleep_hours': 'Sleep_Hours',
+                        'motivation': 'Motivation_Level',
+                        'tutoring': 'Tutoring_Sessions',
+                        'family_income': 'Family_Income',
+                        'teacher_quality': 'Teacher_Quality',
+                        'peer_influence': 'Peer_Influence',
+                        'physical_activity': 'Physical_Activity',
+                        'internet_access': 'Internet_Access'
+                    }
+                    
+                    # Add features that were collected from the form
+                    for form_key, dataset_key in feature_mapping.items():
+                        if form_key in additional_features and dataset_key in preprocessor.get_feature_names():
+                            input_data[dataset_key] = additional_features[form_key]
+                
                 input_df = pd.DataFrame([input_data])
+                
+                # Transform the input data using the enhanced preprocessor
                 X_transformed = preprocessor.transform_new_data(input_df)
+                
+                # Make prediction
                 prediction = model.predict(X_transformed)[0][0]
-                st.success(f"Predicted Exam Score: {prediction:.1f}")
+                
+                # Display results with better formatting
+                st.markdown("### 🎯 Prediction Results")
+                
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.metric("📊 Predicted Exam Score", f"{prediction:.1f}")
+                with col2:
+                    # Grade classification
+                    if prediction >= 90:
+                        grade = "A"
+                        grade_color = "grade-a"
+                    elif prediction >= 80:
+                        grade = "B"
+                        grade_color = "grade-b"
+                    elif prediction >= 70:
+                        grade = "C"
+                        grade_color = "grade-c"
+                    elif prediction >= 60:
+                        grade = "D"
+                        grade_color = "grade-d"
+                    else:
+                        grade = "F"
+                        grade_color = "grade-f"
+                    
+                    st.markdown(f"""
+                    <div class="prediction-card {grade_color}">
+                        <h3>Grade: {grade}</h3>
+                        <p>Performance Level</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                # Show insights
+                st.markdown("### 💡 Insights")
+                if prediction >= 80:
+                    st.success("🎉 Excellent performance predicted! This student shows strong academic potential.")
+                elif prediction >= 70:
+                    st.info("👍 Good performance predicted. There's room for improvement with focused effort.")
+                elif prediction >= 60:
+                    st.warning("⚠️ Average performance predicted. Consider additional support and study strategies.")
+                else:
+                    st.error("📚 Below average performance predicted. Intensive support and intervention recommended.")
+                
             except Exception as e:
                 st.error(f"❌ Error making prediction: {str(e)}")
+                st.info("💡 This might be due to missing features. Please ensure all required data is provided.")
 
 def show_analysis_page(df):
     """Display the analysis page"""

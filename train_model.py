@@ -65,19 +65,21 @@ class ModelTrainer:
             'model': {
                 'problem_type': 'regression',
                 'architecture': {
-                    'hidden_layers': [64, 32, 16],
-                    'dropout_rate': 0.3,
-                    'learning_rate': 0.001,
+                    'hidden_layers': [128, 64, 32, 16],  # Deeper network for 13 features
+                    'dropout_rate': 0.4,  # Higher dropout for better generalization
+                    'learning_rate': 0.0005,  # Lower learning rate for stability
                     'activation': 'relu',
-                    'output_activation': 'linear'
+                    'output_activation': 'linear',
+                    'l2_reg': 0.01  # L2 regularization
                 }
             },
             'training': {
-                'epochs': 100,
-                'batch_size': 32,
+                'epochs': 150,  # More epochs for deeper network
+                'batch_size': 64,  # Larger batch size for stability
                 'validation_split': 0.2,
-                'early_stopping_patience': 15,
-                'lr_scheduler_patience': 10
+                'early_stopping_patience': 20,  # More patience for complex model
+                'lr_scheduler_patience': 15,  # More patience for LR scheduling
+                'min_delta': 0.001  # Minimum improvement threshold
             },
             'evaluation': {
                 'save_plots': True,

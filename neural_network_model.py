@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-Neural Network Model for Student Performance Prediction
+Deep Neural Network Model for Student Performance Prediction
 
 This module provides:
-1. Configurable neural network architecture
-2. Training with early stopping and learning rate scheduling
-3. Model evaluation and performance metrics
+1. Deep neural network architecture (4-layer network)
+2. Advanced training with early stopping and learning rate scheduling
+3. Comprehensive model evaluation and performance metrics
 4. Model saving and loading
-5. Feature importance analysis
+5. Feature importance analysis for deep networks
 """
 
 import numpy as np
@@ -33,7 +33,7 @@ warnings.filterwarnings('ignore', category=DeprecationWarning, module='tensorflo
 warnings.filterwarnings('ignore', category=FutureWarning, module='tensorflow')
 
 class StudentPerformanceModel:
-    """Neural network model for student performance prediction"""
+    """Deep neural network model for student performance prediction"""
     
     def __init__(self, input_dim: int, problem_type: str = 'regression'):
         """
@@ -56,45 +56,50 @@ class StudentPerformanceModel:
     
     def build_model(self, architecture: Dict[str, Any] = None) -> tf.keras.Model:
         """
-        Build the neural network model
+        Build the deep neural network model for student performance prediction
         
         Args:
-            architecture: Dictionary with model configuration
+            architecture: Dictionary with model configuration (optional)
                 - hidden_layers: List of layer sizes
                 - dropout_rate: Dropout rate for regularization
                 - learning_rate: Learning rate for optimizer
                 - activation: Activation function for hidden layers
                 - output_activation: Activation function for output layer
+                - l2_reg: L2 regularization strength
         
         Returns:
             Compiled Keras model
         """
         if architecture is None:
+            # Deep learning architecture optimized for 13 features
             architecture = {
-                'hidden_layers': [64, 32, 16],
-                'dropout_rate': 0.3,
-                'learning_rate': 0.001,
+                'hidden_layers': [128, 64, 32, 16],  # 4-layer deep network
+                'dropout_rate': 0.4,  # High dropout for generalization
+                'learning_rate': 0.0005,  # Low learning rate for stability
                 'activation': 'relu',
-                'output_activation': 'linear' if self.problem_type == 'regression' else 'sigmoid'
+                'output_activation': 'linear' if self.problem_type == 'regression' else 'sigmoid',
+                'l2_reg': 0.01  # L2 regularization
             }
         
         # Always create a new Sequential model to avoid naming conflicts
         model = tf.keras.Sequential()
         
-        # Input layer
+        # Input layer with L2 regularization
         model.add(layers.Dense(
             architecture['hidden_layers'][0],
             activation=architecture['activation'],
-            input_shape=(self.input_dim,)
+            input_shape=(self.input_dim,),
+            kernel_regularizer=tf.keras.regularizers.l2(architecture.get('l2_reg', 0.01))
         ))
         model.add(layers.Dropout(architecture['dropout_rate']))
         model.add(layers.BatchNormalization())
         
-        # Hidden layers
+        # Hidden layers with L2 regularization
         for i, units in enumerate(architecture['hidden_layers'][1:], 1):
             model.add(layers.Dense(
                 units,
-                activation=architecture['activation']
+                activation=architecture['activation'],
+                kernel_regularizer=tf.keras.regularizers.l2(architecture.get('l2_reg', 0.01))
             ))
             model.add(layers.Dropout(architecture['dropout_rate']))
             model.add(layers.BatchNormalization())
@@ -105,15 +110,22 @@ class StudentPerformanceModel:
         else:
             model.add(layers.Dense(1, activation=architecture['output_activation']))
         
-        # Compile model
+        # Compile model with enhanced metrics
         if self.problem_type == 'regression':
-            loss = 'mse'
-            metrics = ['mae']
+            loss = 'huber'  # More robust loss function for outliers
+            metrics = ['mae', 'mse']  # Multiple metrics for better monitoring
         else:
             loss = 'binary_crossentropy'
-            metrics = ['accuracy']
+            metrics = ['accuracy', 'precision', 'recall']
         
-        optimizer = tf.keras.optimizers.Adam(learning_rate=architecture['learning_rate'])
+        # Enhanced optimizer with better scheduling
+        optimizer = tf.keras.optimizers.Adam(
+            learning_rate=architecture['learning_rate'],
+            beta_1=0.9,
+            beta_2=0.999,
+            epsilon=1e-7
+        )
+        
         model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
         
         self.model = model
@@ -123,7 +135,7 @@ class StudentPerformanceModel:
               X_val: Optional[np.ndarray] = None, y_val: Optional[np.ndarray] = None,
               training_config: Dict[str, Any] = None) -> tf.keras.callbacks.History:
         """
-        Train the neural network model
+        Train the deep neural network model
         
         Args:
             X_train, y_train: Training data
@@ -134,6 +146,7 @@ class StudentPerformanceModel:
                 - validation_split: Fraction for validation
                 - early_stopping_patience: Patience for early stopping
                 - lr_scheduler_patience: Patience for learning rate reduction
+                - min_delta: Minimum improvement threshold
         
         Returns:
             Training history
@@ -144,40 +157,43 @@ class StudentPerformanceModel:
         
         if training_config is None:
             training_config = {
-                'epochs': 100,
-                'batch_size': 32,
+                'epochs': 150,  # Optimal epochs for deep network
+                'batch_size': 64,  # Optimal batch size for stability
                 'validation_split': 0.2,
-                'early_stopping_patience': 15,
-                'lr_scheduler_patience': 10
+                'early_stopping_patience': 20,  # Patience for deep model convergence
+                'lr_scheduler_patience': 15,  # Patience for learning rate scheduling
+                'min_delta': 0.001  # Minimum improvement threshold
             }
         
         # Callbacks
         callbacks_list = []
         
-        # Early stopping
+        # Early stopping with minimum delta
         early_stopping = callbacks.EarlyStopping(
             monitor='val_loss',
             patience=training_config['early_stopping_patience'],
+            min_delta=training_config.get('min_delta', 0.001),
             restore_best_weights=True,
             verbose=1
         )
         callbacks_list.append(early_stopping)
         
-        # Learning rate scheduler
+        # Learning rate scheduler for deep network
         lr_scheduler = callbacks.ReduceLROnPlateau(
             monitor='val_loss',
-            factor=0.5,
+            factor=0.3,  # Aggressive reduction for deep networks
             patience=training_config['lr_scheduler_patience'],
-            min_lr=1e-7,
+            min_lr=1e-8,  # Very low minimum learning rate
             verbose=1
         )
         callbacks_list.append(lr_scheduler)
         
-        # Model checkpoint
+        # Model checkpoint for deep network
         checkpoint = callbacks.ModelCheckpoint(
             'best_model.keras',
             monitor='val_loss',
             save_best_only=True,
+            save_weights_only=False,
             verbose=1
         )
         callbacks_list.append(checkpoint)
@@ -224,13 +240,13 @@ class StudentPerformanceModel:
     
     def evaluate(self, X_test: np.ndarray, y_test: np.ndarray) -> Dict[str, float]:
         """
-        Evaluate model performance
+        Evaluate deep neural network performance
         
         Args:
             X_test, y_test: Test data
             
         Returns:
-            Dictionary with evaluation metrics
+            Dictionary with comprehensive evaluation metrics
         """
         if not self.is_trained:
             raise ValueError("Model must be trained before evaluation")
@@ -238,15 +254,33 @@ class StudentPerformanceModel:
         # Make predictions
         y_pred = self.predict(X_test)
         
-        # Calculate metrics
+        # Calculate comprehensive metrics
         metrics = {}
         
         if self.problem_type == 'regression':
-            metrics['mse'] = mean_squared_error(y_test, y_pred)
-            metrics['mae'] = mean_absolute_error(y_test, y_pred)
+            y_pred_flat = y_pred.flatten()
+            
+            # Basic regression metrics
+            metrics['mse'] = mean_squared_error(y_test, y_pred_flat)
+            metrics['mae'] = mean_absolute_error(y_test, y_pred_flat)
             metrics['rmse'] = np.sqrt(metrics['mse'])
-            metrics['r2'] = r2_score(y_test, y_pred)
-            metrics['mape'] = np.mean(np.abs((y_test - y_pred.flatten()) / y_test)) * 100
+            metrics['r2'] = r2_score(y_test, y_pred_flat)
+            
+            # Deep learning specific metrics for student performance
+            metrics['mape'] = np.mean(np.abs((y_test - y_pred_flat) / y_test)) * 100
+            
+            # Grade prediction accuracy (within 5 points)
+            grade_accuracy = np.mean(np.abs(y_test - y_pred_flat) <= 5) * 100
+            metrics['grade_accuracy_5'] = grade_accuracy
+            
+            # Grade prediction accuracy (within 10 points)
+            grade_accuracy_10 = np.mean(np.abs(y_test - y_pred_flat) <= 10) * 100
+            metrics['grade_accuracy_10'] = grade_accuracy_10
+            
+            # Correlation coefficient
+            correlation = np.corrcoef(y_test, y_pred_flat)[0, 1]
+            metrics['correlation'] = correlation
+            
         else:
             # Convert to binary predictions for classification
             y_pred_binary = (y_pred > 0.5).astype(int)
@@ -259,7 +293,7 @@ class StudentPerformanceModel:
     
     def plot_training_history(self, save_path: Optional[str] = None) -> None:
         """
-        Plot training history
+        Plot deep neural network training history
         
         Args:
             save_path: Path to save the plot
@@ -299,7 +333,7 @@ class StudentPerformanceModel:
     def plot_predictions(self, y_true: np.ndarray, y_pred: np.ndarray, 
                         save_path: Optional[str] = None) -> None:
         """
-        Plot actual vs predicted values
+        Plot deep neural network predictions vs actual values
         
         Args:
             y_true: True values
@@ -382,7 +416,7 @@ class StudentPerformanceModel:
     
     def get_feature_importance(self, feature_names: List[str]) -> Dict[str, float]:
         """
-        Get feature importance using permutation importance
+        Get feature importance for deep neural network
         
         Args:
             feature_names: List of feature names
@@ -412,7 +446,7 @@ class StudentPerformanceModel:
     
     def save_model(self, model_path: str = 'student_performance_model.keras') -> None:
         """
-        Save the trained model
+        Save the trained deep neural network model
         
         Args:
             model_path: Path to save the model
@@ -425,7 +459,7 @@ class StudentPerformanceModel:
     
     def load_model(self, model_path: str = 'student_performance_model.keras') -> None:
         """
-        Load a trained model
+        Load a trained deep neural network model
         
         Args:
             model_path: Path to the saved model
@@ -439,7 +473,7 @@ class StudentPerformanceModel:
     
     def get_model_summary(self) -> str:
         """
-        Get model architecture summary
+        Get deep neural network architecture summary
         
         Returns:
             String representation of model architecture
@@ -457,12 +491,12 @@ class StudentPerformanceModel:
         return summary
 
 def main():
-    """Test the neural network model"""
+    """Test the deep neural network model"""
     from data_collection import DataCollector
     from data_preprocessing import DataPreprocessor
     
     print("=" * 60)
-    print("NEURAL NETWORK MODEL TEST")
+    print("DEEP NEURAL NETWORK MODEL TEST")
     print("=" * 60)
     
     # Load and preprocess data
@@ -472,45 +506,47 @@ def main():
     preprocessor = DataPreprocessor()
     X_train, X_test, y_train, y_test = preprocessor.preprocess_data(df)
     
-    # Initialize model
+    # Initialize deep neural network model
     model = StudentPerformanceModel(input_dim=X_train.shape[1], problem_type='regression')
     
-    # Build model
+    # Build deep learning architecture
     architecture = {
-        'hidden_layers': [32, 16],
-        'dropout_rate': 0.2,
-        'learning_rate': 0.001,
+        'hidden_layers': [128, 64, 32, 16],  # 4-layer deep network
+        'dropout_rate': 0.4,  # High dropout for generalization
+        'learning_rate': 0.0005,  # Low learning rate for stability
         'activation': 'relu',
-        'output_activation': 'linear'
+        'output_activation': 'linear',
+        'l2_reg': 0.01  # L2 regularization
     }
     model.build_model(architecture)
     
-    # Train model
+    # Train deep neural network
     training_config = {
-        'epochs': 20,
-        'batch_size': 32,
+        'epochs': 50,  # Optimal epochs for deep network
+        'batch_size': 64,  # Optimal batch size for stability
         'validation_split': 0.2,
-        'early_stopping_patience': 5,
-        'lr_scheduler_patience': 3
+        'early_stopping_patience': 10,  # Patience for convergence
+        'lr_scheduler_patience': 8,  # Patience for learning rate scheduling
+        'min_delta': 0.001  # Minimum improvement threshold
     }
     history = model.train(X_train, y_train, training_config=training_config)
     
-    # Evaluate model
+    # Evaluate deep neural network
     metrics = model.evaluate(X_test, y_test)
-    print(f"\nModel Performance:")
+    print(f"\nDeep Neural Network Performance:")
     for metric, value in metrics.items():
         print(f"  {metric.upper()}: {value:.4f}")
     
-    # Get feature importance
+    # Get feature importance for deep network
     feature_names = preprocessor.get_feature_names()
     importance = model.get_feature_importance(feature_names)
     
-    print(f"\nTop 10 Most Important Features:")
+    print(f"\nTop 10 Most Important Features (Deep Network):")
     sorted_importance = sorted(importance.items(), key=lambda x: x[1], reverse=True)
     for i, (feature, score) in enumerate(sorted_importance[:10], 1):
         print(f"  {i}. {feature}: {score:.4f}")
     
-    print(f"\n✅ Neural network model test completed successfully!")
+    print(f"\n✅ Deep neural network model test completed successfully!")
 
 if __name__ == "__main__":
     main() 
