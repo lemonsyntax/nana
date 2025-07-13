@@ -3,19 +3,19 @@
 
 ## Executive Summary
 - **Model Type**: Neural Network (regression)
-- **Training Date**: 2025-07-10 02:06:50
+- **Training Date**: 2025-07-12 11:02:26
 - **Dataset Size**: 6606 samples
-- **Features**: 13 engineered features
+- **Features**: 11 engineered features
 
 ## Model Performance
-- **MSE**: 3.9962
-- **MAE**: 1.2047
-- **RMSE**: 1.9990
-- **R2**: 0.6978
-- **MAPE**: 1.7644
-- **GRADE_ACCURACY_5**: 99.6218
-- **GRADE_ACCURACY_10**: 99.6218
-- **CORRELATION**: 0.8539
+- **MSE**: 13.2243
+- **MAE**: 2.7439
+- **RMSE**: 3.6365
+- **R2**: -0.0000
+- **MAPE**: 4.0790
+- **GRADE_ACCURACY_5**: 86.2330
+- **GRADE_ACCURACY_10**: 99.3192
+- **CORRELATION**: nan
 
 ## Model Architecture
 - **Hidden Layers**: [64, 32, 16]
@@ -24,20 +24,20 @@
 - **Activation**: relu
 
 ## Top 10 Most Important Features
-1. **Attendance**: 0.2331
-2. **Hours_Studied**: 0.1778
-3. **Previous_Scores**: 0.0884
-4. **Tutoring_Sessions**: 0.0669
-5. **Family_Income**: 0.0520
-6. **Teacher_Quality**: 0.0517
-7. **Parental_Education_Level**: 0.0513
-8. **Physical_Activity**: 0.0511
-9. **Peer_Influence**: 0.0503
-10. **Sleep_Hours**: 0.0469
+1. **Family_Income**: 0.1407
+2. **Teacher_Quality**: 0.1360
+3. **Parental_Education_Level**: 0.1075
+4. **Previous_Scores**: 0.1053
+5. **Hours_Studied**: 0.0973
+6. **Extracurricular_Activities**: 0.0962
+7. **Internet_Access**: 0.0948
+8. **Sleep_Hours**: 0.0755
+9. **Attendance**: 0.0660
+10. **Tutoring_Sessions**: 0.0536
 
 ## Files Generated
-- Model: models/student_performance_model_20250710_020650.keras
-- Preprocessor: models/preprocessor_20250710_020650.pkl
+- Model: models/student_performance_model_20250712_110226.keras
+- Preprocessor: models/preprocessor_20250712_110226.pkl
 - Plots: plots/
 - Reports: reports/
 

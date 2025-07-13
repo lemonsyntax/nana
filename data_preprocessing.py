@@ -143,9 +143,9 @@ class DataPreprocessor:
         # Additional features if available
         additional_features = [
             'Extracurricular_Activities', 'Parental_Education_Level',
-            'Sleep_Hours', 'Motivation_Level', 'Tutoring_Sessions',
+            'Sleep_Hours', 'Tutoring_Sessions',
             'Family_Income', 'Teacher_Quality', 'Peer_Influence',
-            'Physical_Activity', 'Internet_Access'
+            'Internet_Access'
         ]
         
         # Select features that exist in the dataset
@@ -210,7 +210,6 @@ class DataPreprocessor:
                 'High School': 1, 'College': 2, 'Undergraduate': 2, 
                 'Graduate': 3, 'Postgraduate': 4, 1: 1, 2: 2, 3: 3, 4: 4
             },
-            'Motivation_Level': {'Low': 1, 'Medium': 2, 'High': 3, 'low': 1, 'medium': 2, 'high': 3},
             'Family_Income': {'Low': 1, 'Medium': 2, 'High': 3, 'low': 1, 'medium': 2, 'high': 3},
             'Teacher_Quality': {'Low': 1, 'Medium': 2, 'High': 3, 'low': 1, 'medium': 2, 'high': 3},
             'Peer_Influence': {'Negative': 1, 'Neutral': 2, 'Positive': 3, 'negative': 1, 'neutral': 2, 'positive': 3},

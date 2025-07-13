@@ -8,6 +8,8 @@ This project predicts student performance using a neural network trained on a si
 ## Dataset
 - The only dataset used is: `data/StudentPerformanceFactors.csv`
 - All scripts and the app are configured to use this file exclusively.
+- **Features**: 11 engineered features including study habits, academic history, family background, and support systems
+- **Target**: Exam_Score (0-100 scale)
 
 ## Usage
 1. **Train the Model:**

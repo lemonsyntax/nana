@@ -1,0 +1,206 @@
+{
+  "creation_date": "2025-07-11T22:18:52.304852",
+  "models": [
+    {
+      "config_name": "shallow_wide",
+      "model_path": "models/ensemble_model_shallow_wide_20250711_221644.keras",
+      "metrics": {
+        "mse": 3.5842596984803095,
+        "mae": 1.0885087242645863,
+        "rmse": 1.8932141184980398,
+        "r2": 0.7289624671150534,
+        "mape": 1.5923110284076454,
+        "acc_5": 99.62178517397882,
+        "acc_10": 99.62178517397882,
+        "corr": 0.8547791346342906
+      },
+      "architecture": {
+        "hidden_layers": [
+          256,
+          128
+        ],
+        "dropout_rate": 0.3,
+        "learning_rate": 0.001,
+        "activation": "relu",
+        "output_activation": "linear",
+        "l2_reg": 0.01
+      },
+      "training_config": {
+        "epochs": 100,
+        "batch_size": 32,
+        "validation_split": 0.2,
+        "early_stopping_patience": 15,
+        "lr_scheduler_patience": 10
+      }
+    },
+    {
+      "config_name": "deep_narrow",
+      "model_path": "models/ensemble_model_deep_narrow_20250711_221711.keras",
+      "metrics": {
+        "mse": 3.736913654388832,
+        "mae": 1.1261914869299816,
+        "rmse": 1.9331098402286488,
+        "r2": 0.7174189532306896,
+        "mape": 1.6476241909493192,
+        "acc_5": 99.62178517397882,
+        "acc_10": 99.62178517397882,
+        "corr": 0.8476223345612375
+      },
+      "architecture": {
+        "hidden_layers": [
+          64,
+          32,
+          16,
+          8
+        ],
+        "dropout_rate": 0.4,
+        "learning_rate": 0.0005,
+        "activation": "elu",
+        "output_activation": "linear",
+        "l2_reg": 0.005
+      },
+      "training_config": {
+        "epochs": 120,
+        "batch_size": 64,
+        "validation_split": 0.2,
+        "early_stopping_patience": 20,
+        "lr_scheduler_patience": 15
+      }
+    },
+    {
+      "config_name": "medium_balanced",
+      "model_path": "models/ensemble_model_medium_balanced_20250711_221742.keras",
+      "metrics": {
+        "mse": 3.5516051425395894,
+        "mae": 1.07843294013827,
+        "rmse": 1.8845702806049949,
+        "r2": 0.7314317665029797,
+        "mape": 1.5822809309985266,
+        "acc_5": 99.62178517397882,
+        "acc_10": 99.62178517397882,
+        "corr": 0.8554107210784987
+      },
+      "architecture": {
+        "hidden_layers": [
+          128,
+          64,
+          32
+        ],
+        "dropout_rate": 0.25,
+        "learning_rate": 0.0008,
+        "activation": "swish",
+        "output_activation": "linear",
+        "l2_reg": 0.008
+      },
+      "training_config": {
+        "epochs": 80,
+        "batch_size": 48,
+        "validation_split": 0.2,
+        "early_stopping_patience": 12,
+        "lr_scheduler_patience": 8
+      }
+    },
+    {
+      "config_name": "high_dropout",
+      "model_path": "models/ensemble_model_high_dropout_20250711_221803.keras",
+      "metrics": {
+        "mse": 5.193415592205258,
+        "mae": 1.4374131737967302,
+        "rmse": 2.278906665970605,
+        "r2": 0.6072799775210653,
+        "mape": 2.1450046869729924,
+        "acc_5": 98.71406959152799,
+        "acc_10": 99.62178517397882,
+        "corr": 0.8087626384740978
+      },
+      "architecture": {
+        "hidden_layers": [
+          96,
+          48,
+          24
+        ],
+        "dropout_rate": 0.5,
+        "learning_rate": 0.0012,
+        "activation": "relu",
+        "output_activation": "linear",
+        "l2_reg": 0.015
+      },
+      "training_config": {
+        "epochs": 90,
+        "batch_size": 40,
+        "validation_split": 0.2,
+        "early_stopping_patience": 18,
+        "lr_scheduler_patience": 12
+      }
+    },
+    {
+      "config_name": "low_l2",
+      "model_path": "models/ensemble_model_low_l2_20250711_221852.keras",
+      "metrics": {
+        "mse": 3.536220310801494,
+        "mae": 1.0768655064246657,
+        "rmse": 1.8804840628948425,
+        "r2": 0.7325951495133993,
+        "mape": 1.5773290838375582,
+        "acc_5": 99.62178517397882,
+        "acc_10": 99.62178517397882,
+        "corr": 0.8560591916805138
+      },
+      "architecture": {
+        "hidden_layers": [
+          160,
+          80,
+          40,
+          20
+        ],
+        "dropout_rate": 0.2,
+        "learning_rate": 0.0006,
+        "activation": "elu",
+        "output_activation": "linear",
+        "l2_reg": 0.001
+      },
+      "training_config": {
+        "epochs": 110,
+        "batch_size": 56,
+        "validation_split": 0.2,
+        "early_stopping_patience": 16,
+        "lr_scheduler_patience": 11
+      }
+    }
+  ],
+  "best_model": {
+    "config_name": "low_l2",
+    "model_path": "models/ensemble_model_low_l2_20250711_221852.keras",
+    "metrics": {
+      "mse": 3.536220310801494,
+      "mae": 1.0768655064246657,
+      "rmse": 1.8804840628948425,
+      "r2": 0.7325951495133993,
+      "mape": 1.5773290838375582,
+      "acc_5": 99.62178517397882,
+      "acc_10": 99.62178517397882,
+      "corr": 0.8560591916805138
+    },
+    "architecture": {
+      "hidden_layers": [
+        160,
+        80,
+        40,
+        20
+      ],
+      "dropout_rate": 0.2,
+      "learning_rate": 0.0006,
+      "activation": "elu",
+      "output_activation": "linear",
+      "l2_reg": 0.001
+    },
+    "training_config": {
+      "epochs": 110,
+      "batch_size": 56,
+      "validation_split": 0.2,
+      "early_stopping_patience": 16,
+      "lr_scheduler_patience": 11
+    }
+  },
+  "ensemble_size": 5
+}

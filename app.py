@@ -152,10 +152,10 @@ def load_model_and_preprocessor():
             use_enhanced_features = False
         except:
             # If failed, try with more features
-            temp_model = StudentPerformanceModel(input_dim=13)
+            temp_model = StudentPerformanceModel(input_dim=11)
             try:
                 temp_model.load_model(model_path)
-                input_dim = 13
+                input_dim = 11
                 use_enhanced_features = True
             except:
                 st.error("❌ Could not load model with any input dimension")
@@ -319,7 +319,7 @@ def show_home_page(df):
         """)
 
 def show_prediction_page(model, preprocessor):
-    """Display the prediction page (updated UI)"""
+    """Display the prediction page (updated UI, always 11 features)"""
     st.markdown("## 📈 Student Performance Prediction")
     st.markdown("""
     <div class="info-box">
@@ -336,87 +336,40 @@ def show_prediction_page(model, preprocessor):
             hours_studied = st.number_input("Hours Studied", min_value=0.0, max_value=100.0, value=5.0, help="Enter the number of hours the student studied for the exam.")
             previous_score = st.number_input("Previous Test Score", min_value=0.0, max_value=100.0, value=75.0, help="Enter the score from the student's previous test (0-100).")
             attendance = st.number_input("Attendance Percentage", min_value=0.0, max_value=100.0, value=90.0, help="Enter the attendance rate in percentage (0-100%).")
+            sleep_hours = st.number_input("Sleep Hours per Night", min_value=0.0, max_value=24.0, value=8.0, help="Average hours of sleep per night")
+            tutoring = st.number_input("Tutoring Sessions", min_value=0, max_value=50, value=0, help="Number of tutoring sessions attended")
         
         with col2:
             extracurricular = st.selectbox("Extra-Curricular Activities", options=[1, 0], format_func=lambda x: "Yes" if x == 1 else "No", help="Does the student participate in extra-curricular activities?")
             parent_edu = st.selectbox("Parent's Education Level", options=[1, 2, 3, 4], format_func=lambda x: {1: 'High School', 2: 'College/Undergraduate', 3: 'Graduate', 4: 'Postgraduate'}[x], help="Highest education level of the student's parents")
-        
-        # Additional features (only show if using enhanced preprocessor)
-        additional_features = {}
-        
-        # Check if we're using enhanced features (more than 5 features)
-        if len(preprocessor.get_feature_names()) > 5:
-            st.markdown("### Additional Factors")
-            
-            # Check if additional features are available and add them to the form
-            if 'Sleep_Hours' in preprocessor.get_feature_names():
-                additional_features['sleep_hours'] = st.number_input("Sleep Hours per Night", min_value=0.0, max_value=24.0, value=8.0, help="Average hours of sleep per night")
-            
-            if 'Motivation_Level' in preprocessor.get_feature_names():
-                additional_features['motivation'] = st.selectbox("Motivation Level", options=[1, 2, 3], format_func=lambda x: {1: 'Low', 2: 'Medium', 3: 'High'}[x], help="Student's motivation level")
-            
-            if 'Tutoring_Sessions' in preprocessor.get_feature_names():
-                additional_features['tutoring'] = st.number_input("Tutoring Sessions", min_value=0, max_value=50, value=0, help="Number of tutoring sessions attended")
-            
-            if 'Family_Income' in preprocessor.get_feature_names():
-                additional_features['family_income'] = st.selectbox("Family Income Level", options=[1, 2, 3], format_func=lambda x: {1: 'Low', 2: 'Medium', 3: 'High'}[x], help="Family income level")
-            
-            if 'Teacher_Quality' in preprocessor.get_feature_names():
-                additional_features['teacher_quality'] = st.selectbox("Teacher Quality", options=[1, 2, 3], format_func=lambda x: {1: 'Low', 2: 'Medium', 3: 'High'}[x], help="Perceived quality of teaching")
-            
-            if 'Peer_Influence' in preprocessor.get_feature_names():
-                additional_features['peer_influence'] = st.selectbox("Peer Influence", options=[1, 2, 3], format_func=lambda x: {1: 'Negative', 2: 'Neutral', 3: 'Positive'}[x], help="Influence of peers on academic performance")
-            
-            if 'Physical_Activity' in preprocessor.get_feature_names():
-                additional_features['physical_activity'] = st.selectbox("Physical Activity", options=[1, 0], format_func=lambda x: "Yes" if x == 1 else "No", help="Does the student engage in regular physical activity?")
-            
-            if 'Internet_Access' in preprocessor.get_feature_names():
-                additional_features['internet_access'] = st.selectbox("Internet Access", options=[1, 0], format_func=lambda x: "Yes" if x == 1 else "No", help="Does the student have reliable internet access?")
-        else:
-            st.info("💡 Using simplified model with 5 core features. For enhanced predictions with more factors, retrain the model.")
+            family_income = st.selectbox("Family Income Level", options=[1, 2, 3], format_func=lambda x: {1: 'Low', 2: 'Medium', 3: 'High'}[x], help="Family income level")
+            teacher_quality = st.selectbox("Teacher Quality", options=[1, 2, 3], format_func=lambda x: {1: 'Low', 2: 'Medium', 3: 'High'}[x], help="Perceived quality of teaching")
+            peer_influence = st.selectbox("Peer Influence", options=[1, 2, 3], format_func=lambda x: {1: 'Negative', 2: 'Neutral', 3: 'Positive'}[x], help="Influence of peers on academic performance")
+            internet_access = st.selectbox("Internet Access", options=[1, 0], format_func=lambda x: "Yes" if x == 1 else "No", help="Does the student have reliable internet access?")
         
         submitted = st.form_submit_button("🎯 Predict Performance")
 
         if submitted:
             try:
-                # Create input data with all available features
+                # Always use all 11 features in the correct order
                 input_data = {
                     'Hours_Studied': hours_studied,
                     'Previous_Scores': previous_score,
                     'Attendance': attendance,
                     'Extracurricular_Activities': extracurricular,
-                    'Parental_Education_Level': parent_edu
+                    'Parental_Education_Level': parent_edu,
+                    'Sleep_Hours': sleep_hours,
+                    'Tutoring_Sessions': tutoring,
+                    'Family_Income': family_income,
+                    'Teacher_Quality': teacher_quality,
+                    'Peer_Influence': peer_influence,
+                    'Internet_Access': internet_access
                 }
-                
-                # Add additional features from the form (only if using enhanced preprocessor)
-                if len(preprocessor.get_feature_names()) > 5:
-                    feature_mapping = {
-                        'sleep_hours': 'Sleep_Hours',
-                        'motivation': 'Motivation_Level',
-                        'tutoring': 'Tutoring_Sessions',
-                        'family_income': 'Family_Income',
-                        'teacher_quality': 'Teacher_Quality',
-                        'peer_influence': 'Peer_Influence',
-                        'physical_activity': 'Physical_Activity',
-                        'internet_access': 'Internet_Access'
-                    }
-                    
-                    # Add features that were collected from the form
-                    for form_key, dataset_key in feature_mapping.items():
-                        if form_key in additional_features and dataset_key in preprocessor.get_feature_names():
-                            input_data[dataset_key] = additional_features[form_key]
-                
                 input_df = pd.DataFrame([input_data])
-                
-                # Transform the input data using the enhanced preprocessor
                 X_transformed = preprocessor.transform_new_data(input_df)
-                
-                # Make prediction
                 prediction = model.predict(X_transformed)[0][0]
-                
                 # Display results with better formatting
                 st.markdown("### 🎯 Prediction Results")
-                
                 col1, col2 = st.columns(2)
                 with col1:
                     st.metric("📊 Predicted Exam Score", f"{prediction:.1f}")
@@ -437,14 +390,12 @@ def show_prediction_page(model, preprocessor):
                     else:
                         grade = "F"
                         grade_color = "grade-f"
-                    
                     st.markdown(f"""
                     <div class="prediction-card {grade_color}">
                         <h3>Grade: {grade}</h3>
                         <p>Performance Level</p>
                     </div>
                     """, unsafe_allow_html=True)
-                
                 # Show insights
                 st.markdown("### 💡 Insights")
                 if prediction >= 80:
@@ -455,7 +406,6 @@ def show_prediction_page(model, preprocessor):
                     st.warning("⚠️ Average performance predicted. Consider additional support and study strategies.")
                 else:
                     st.error("📚 Below average performance predicted. Intensive support and intervention recommended.")
-                
             except Exception as e:
                 st.error(f"❌ Error making prediction: {str(e)}")
                 st.info("💡 This might be due to missing features. Please ensure all required data is provided.")
