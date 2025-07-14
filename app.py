@@ -129,7 +129,7 @@ st.markdown("""
 
 @st.cache_resource
 def load_model_and_preprocessor():
-    """Load the trained model and preprocessor"""
+    """Load the trained model and preprocessor (always use 11 features)"""
     try:
         models_dir = 'models'
         if not os.path.exists(models_dir):
@@ -143,70 +143,21 @@ def load_model_and_preprocessor():
         latest_model = sorted(model_files)[-1]
         model_path = os.path.join(models_dir, latest_model)
         
-        # Load the existing model first to check its input dimension
-        temp_model = StudentPerformanceModel(input_dim=5)  # Try with 5 features first
-        try:
-            temp_model.load_model(model_path)
-            # If successful, the model expects 5 features
-            input_dim = 5
-            use_enhanced_features = False
-        except:
-            # If failed, try with more features
-            temp_model = StudentPerformanceModel(input_dim=11)
-            try:
-                temp_model.load_model(model_path)
-                input_dim = 11
-                use_enhanced_features = True
-            except:
-                st.error("❌ Could not load model with any input dimension")
-                return None, None
+        # Always use 11 features
+        input_dim = 11
+        model = StudentPerformanceModel(input_dim=input_dim)
+        model.load_model(model_path)
         
-        # Create preprocessor based on model compatibility
-        if use_enhanced_features:
-            # Use enhanced preprocessor with all features
-            preprocessor = DataPreprocessor()
-            collector = DataCollector()
-            df = collector.load_csv()
-            if df is not None:
-                X_train, X_test, y_train, y_test = preprocessor.preprocess_data(df)
-                model = StudentPerformanceModel(input_dim=input_dim)
-                model.load_model(model_path)
-                st.success(f"✅ Enhanced preprocessor loaded! Using {input_dim} features.")
-            else:
-                st.error("❌ Could not load dataset")
-                return None, None
+        # Use enhanced preprocessor with all features
+        preprocessor = DataPreprocessor()
+        collector = DataCollector()
+        df = collector.load_csv()
+        if df is not None:
+            X_train, X_test, y_train, y_test = preprocessor.preprocess_data(df)
+            st.success(f"✅ Enhanced preprocessor loaded! Using {input_dim} features.")
         else:
-            # Use simplified preprocessor with only 5 features
-            preprocessor = DataPreprocessor()
-            collector = DataCollector()
-            df = collector.load_csv()
-            if df is not None:
-                # Use only the original 5 features
-                required_cols = ['Hours_Studied', 'Previous_Scores', 'Attendance', 
-                               'Extracurricular_Activities', 'Parental_Education_Level', 'Exam_Score']
-                df_simple = df[required_cols].copy()
-                
-                # Simple preprocessing for 5 features
-                df_simple['Extracurricular_Activities'] = df_simple['Extracurricular_Activities'].replace({'Yes': 1, 'No': 0, 'yes': 1, 'no': 0}).fillna(0).astype(int)
-                edu_map = {'High School': 1, 'College': 2, 'Undergraduate': 2, 'Graduate': 3, 'Postgraduate': 4, 1: 1, 2: 2, 3: 3, 4: 4}
-                df_simple['Parental_Education_Level'] = df_simple['Parental_Education_Level'].replace(edu_map).fillna(1).astype(int)
-                df_simple = df_simple.fillna(df_simple.mean(numeric_only=True))
-                
-                X = df_simple.drop(columns=['Exam_Score'])
-                y = df_simple['Exam_Score']
-                X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-                
-                # Fit scaler
-                preprocessor.scaler.fit(X_train)
-                preprocessor.feature_columns = X.columns.tolist()
-                preprocessor.is_fitted = True
-                
-                model = StudentPerformanceModel(input_dim=input_dim)
-                model.load_model(model_path)
-                st.warning(f"⚠️ Using simplified preprocessor with {input_dim} features. Consider retraining with enhanced features.")
-            else:
-                st.error("❌ Could not load dataset")
-                return None, None
+            st.error("❌ Could not load dataset")
+            return None, None
         
         return model, preprocessor
         
