@@ -47,7 +47,7 @@ class AccuracyAnalyzer:
         model_path = os.path.join(models_dir, latest_model)
         
         # Load model
-        self.model = StudentPerformanceModel(input_dim=13)
+        self.model = StudentPerformanceModel(input_dim=11)
         self.model.load_model(model_path)
         
         # Load and preprocess data

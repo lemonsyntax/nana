@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-07-12T11:02:26.812728",
+  "timestamp": "2025-07-14T05:02:31.766101",
   "config": {
     "data": {
       "n_samples": 1000,
@@ -49,25 +49,25 @@
     "random_state": 42
   },
   "test_metrics": {
-    "mse": 13.224263191223145,
-    "mae": 2.7439494132995605,
-    "rmse": 3.6365180036984754,
-    "r2": -3.337860107421875e-06,
-    "mape": 4.079029096366284,
-    "grade_accuracy_5": 86.23298033282904,
-    "grade_accuracy_10": 99.31921331316188,
-    "correlation": NaN
+    "mse": 4.417835712432861,
+    "mae": 1.2967584133148193,
+    "rmse": 2.1018648178303145,
+    "r2": 0.6659284234046936,
+    "mape": 1.8888707183876363,
+    "grade_accuracy_5": 99.54614220877458,
+    "grade_accuracy_10": 99.62178517397882,
+    "correlation": 0.8488398496848911
   },
   "top_features": {
-    "Family_Income": "0.14070651",
-    "Teacher_Quality": "0.13596934",
-    "Parental_Education_Level": "0.10748054",
-    "Previous_Scores": "0.10527335",
-    "Hours_Studied": "0.09729204",
-    "Extracurricular_Activities": "0.096209824",
-    "Internet_Access": "0.09479045",
-    "Sleep_Hours": "0.07551105",
-    "Attendance": "0.06596974",
-    "Tutoring_Sessions": "0.05358049"
+    "Attendance": "0.21267486",
+    "Hours_Studied": "0.15154217",
+    "Previous_Scores": "0.09637544",
+    "Tutoring_Sessions": "0.0864548",
+    "Internet_Access": "0.075832754",
+    "Family_Income": "0.07009627",
+    "Teacher_Quality": "0.06877977",
+    "Parental_Education_Level": "0.06723461",
+    "Extracurricular_Activities": "0.06092054",
+    "Peer_Influence": "0.06077457"
   }
 }
