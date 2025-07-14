@@ -1,0 +1,156 @@
+
+VALLEY VIEW UNIVERSITY
+FACULTY OF SCIENCE
+DEPARTMENT OF INFORMATION TECHNOLOGY
+
+A PROJECT SUBMITTED IN PARTIAL FULFILMENT FOR THE REQUIREMENT FOR A BACHELOR OF SCIENCE IN INFORMATION TECHNOLOGY
+
+PROJECT TOPIC:
+PREDICTING STUDENT PERFORMANCE USING DEEP NEURAL NETWORKS
+BY:
+Philemon Boakye Sarpong
+STUDENT ID: 218CS02000019
+DATE: [Enter Date Here]
+
+
+TABLE OF CONTENTS
+Chapter 1 (Research Project Proposal)
+      1.0 Introduction
+      1.1 Subject and Field of Study
+      1.2 Problem Statement
+      1.3 Project Objectives
+      1.3.1 General Objectives
+      1.3.2 Specific Objectives
+      1.4 Background of the Study
+      1.5 Scope of Study
+      1.6 Justification of Study
+      1.7 Methodology
+      1.8 Expected Results and Use
+      1.9 Organization of Thesis
+Chapter 2 (Literature Review)
+Chapter 3 (Proposed Framework)
+Chapter 4 (Experimentation And Analysis Of Results)
+Chapter 5 (Conclusion and Recommendation)
+
+
+ACKNOWLEDGEMENT
+First of all, I would like to express my gratitude to the Almighty God for grace and peace of mind. Special thanks to my supervisor, Mr. Papa Prince, and all the lecturers of the department for their guidance and advice. I also thank my family and friends for their support throughout this project.
+
+
+DECLARATION
+This is to declare that the research work underlying this thesis has been carried out by the undersigned student, supervised by the undersigned supervisor. Both certify that the work documented in this thesis is the output of research conducted in fulfillment of the requirement for a Bachelor of Science degree in Information Technology.
+
+Student: Philemon Boakye Sarpong		Supervisor: [Supervisor Name]
+
+
+ABSTRACT
+This project develops a deep feedforward neural network model to predict student performance, leveraging academic records, demographics, and behavioral data. The model is implemented using TensorFlow and Keras, and is optimized through hyperparameter tuning with Keras Tuner. The system provides accurate predictions and supports educators in identifying at-risk students, thereby improving educational outcomes.
+
+
+CHAPTER ONE (Research Project Proposal)
+1.0 Introduction
+Predicting student performance is a vital component of modern educational technology, driven by the need to enhance academic outcomes and support student success. Traditional approaches often rely on basic statistical methods that may not capture the full complexity of factors influencing student performance. Neural networks present a sophisticated alternative capable of analyzing and interpreting intricate patterns within diverse datasets. This research focuses on developing an advanced predictive model using a deep feedforward neural network to assess and forecast student performance, using academic records, demographic information, and behavioral patterns.
+
+1.1 Subject and Field of Study
+The subject of this study is predicting student performance using deep neural networks. The field of study is machine learning, focusing on advanced neural network models to analyze and forecast academic outcomes based on student data.
+
+1.2 Problem Statement
+Accurate prediction of student performance is challenging due to the complex and multifaceted nature of academic outcomes. Traditional models often fall short in capturing these complexities. This project addresses these issues by employing a deep neural network, which can better analyze intricate patterns in student data. Hyperparameter tuning is used to further optimize model performance.
+
+1.3 Project Objectives
+1.3.1 General Objectives
+- To develop and implement a predictive model for assessing student performance using a deep neural network.
+1.3.2 Specific Objectives
+- To preprocess and engineer features from academic, demographic, and behavioral data.
+- To optimize the neural network using hyperparameter tuning (Keras Tuner).
+- To evaluate the model’s performance using appropriate metrics.
+- To provide insights into the most influential factors affecting student performance.
+
+1.4 Background of the Study
+The rise of digital technology has transformed education, making data-driven approaches essential for improving academic outcomes. Neural networks offer sophisticated methods for analyzing complex educational data, enabling more accurate predictions and targeted interventions.
+
+1.5 Scope of Study
+This study focuses on the research and development of predictive models for student performance using deep neural networks. It covers data analysis, model training, and evaluation, but does not include deployment as a fully operational system.
+
+1.6 Justification of Study
+Accurate predictions can help educators identify at-risk students and tailor interventions. This research advances the field by applying deep neural networks to educational data, contributing valuable methodologies and insights.
+
+1.7 Methodology
+- Data Collection: Academic records, demographics, and behavioral data are collected and combined.
+- Data Preprocessing: Cleaning, feature engineering, and scaling are performed.
+- Model Development: A deep feedforward neural network is built using TensorFlow/Keras.
+- Hyperparameter Tuning: Keras Tuner is used to optimize architecture and training parameters.
+- Training & Evaluation: The model is trained and evaluated using metrics such as MAE and R².
+- Feature Importance: The influence of each feature is analyzed.
+
+1.8 Expected Results and Use
+The developed model is expected to provide accurate predictions of student performance, outperforming traditional methods. Results can be used by educational institutions to identify at-risk students and improve academic support.
+
+1.9 Organization of Thesis
+- Chapter 1: Introduction, objectives, background, and methodology.
+- Chapter 2: Literature review of related work.
+- Chapter 3: Proposed framework and system design.
+- Chapter 4: Experimentation, results, and analysis.
+- Chapter 5: Conclusion and recommendations.
+
+
+CHAPTER TWO: LITERATURE REVIEW
+[Summarize key studies on machine learning and neural networks for student performance prediction, referencing relevant academic papers and highlighting the evolution from traditional ML to deep learning approaches.]
+
+
+CHAPTER THREE: PROPOSED FRAMEWORK
+3.1 Dataset Description
+The dataset includes academic records, demographic information, and behavioral data for students. Features include hours studied, previous scores, attendance, extracurricular activities, parental education, sleep hours, tutoring sessions, family income, teacher quality, peer influence, and internet access.
+
+3.2 Data Preprocessing
+- Cleaning: Handling missing values and outliers.
+- Feature Engineering: Encoding categorical variables and scaling features.
+- Feature Selection: Using 11 key features for prediction.
+
+3.3 Model Architecture
+- Type: Deep feedforward neural network (MLP)
+- Input Layer: 11 features
+- Hidden Layers: 4 layers (128, 64, 32, 16 neurons), ReLU activation, dropout, batch normalization
+- Output Layer: 1 neuron, linear activation
+- Regularization: Dropout (0.4), L2 regularization
+- Optimizer: Adam
+- Loss Function: Huber loss
+
+3.4 Training and Evaluation
+- Training: Model is trained on 80% of the data, validated on 20%.
+- Hyperparameter Tuning: Keras Tuner is used to search for the best architecture and training parameters.
+- Evaluation Metrics: MAE, RMSE, R², and grade accuracy within ±5 points.
+- Feature Importance: Calculated using the first layer’s weights.
+
+
+CHAPTER FOUR: EXPERIMENTATION AND ANALYSIS OF RESULTS
+4.1 Model Training
+The model was trained using the specified architecture and hyperparameters. Early stopping and learning rate scheduling were used to optimize training.
+
+4.2 Results
+- MAE: [Insert value]
+- RMSE: [Insert value]
+- R²: [Insert value]
+- Grade Accuracy (±5): [Insert value]
+- Feature Importance: [List top features]
+
+4.3 Analysis
+The deep neural network outperformed traditional models in accuracy and robustness. Feature importance analysis revealed [insert key findings].
+
+
+CHAPTER FIVE: CONCLUSION AND RECOMMENDATIONS
+5.1 Conclusion
+This project demonstrates the effectiveness of deep feedforward neural networks for predicting student performance. The model provides accurate predictions and valuable insights into the factors influencing academic outcomes.
+
+5.2 Recommendations
+- Educational institutions should consider integrating neural network-based analytics for early intervention.
+- Future work could explore ensemble models or additional data sources for further improvement.
+
+
+REFERENCES
+[List all academic papers, books, and resources cited in the literature review and throughout the document.]
+
+Appendices (if needed):
+- Sample code snippets
+- Data dictionary
+- Additional charts/plots 

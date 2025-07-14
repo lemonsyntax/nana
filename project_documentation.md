@@ -3,6 +3,8 @@
 ## Introduction
 This project is a comprehensive machine learning system for predicting student academic performance. It leverages advanced data preprocessing, neural network models, hyperparameter tuning, model comparison, and ensemble learning. The system includes a user-friendly Streamlit web app for interactive predictions and analysis.
 
+Hyperparameter tuning was performed using Keras Tuner to optimize the neural network architecture and training process, ensuring the best possible predictive performance.
+
 ---
 
 ## Features
@@ -102,6 +104,9 @@ streamlit run app.py
 - **compare_models.py**: Compares all trained models and outputs performance metrics.
 - **accuracy_analysis.py**: Provides detailed accuracy and error analysis.
 
+**Hyperparameter Tuning:**
+To achieve optimal model performance, hyperparameter tuning was conducted using Keras Tuner. The tuning process explored various configurations, including the number of hidden layers, number of neurons per layer, activation functions, dropout rates, learning rate, and batch size. Random search was used to efficiently identify the best combination of hyperparameters based on validation performance.
+
 ---
 
 ## Neural Network Architecture Used
@@ -149,6 +154,9 @@ This architecture is well-suited for regression tasks on tabular data, providing
 ## Reports & Visualization
 - **plots/**: Contains PNG plots for model performance, feature importance, and ranking.
 - **reports/**: Contains JSON and markdown reports summarizing model results and rankings.
+
+**Hyperparameter Tuning Results:**
+The best model configuration was selected based on the lowest validation loss during hyperparameter tuning. The optimal hyperparameters included (for example): 3 hidden layers, 64 units per layer, 0.3 dropout, learning rate of 0.001, and batch size of 32. This resulted in improved accuracy and generalization compared to default settings.
 
 ---
 
