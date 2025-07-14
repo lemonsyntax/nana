@@ -104,6 +104,43 @@ streamlit run app.py
 
 ---
 
+## Neural Network Architecture Used
+
+This project uses a **deep feedforward neural network** (also known as a multilayer perceptron, or MLP) for student performance prediction. The model is implemented using TensorFlow and Keras.
+
+### Model Type
+- **Feedforward Neural Network (MLP):**
+  - Data flows in one direction: from input to output.
+  - Consists of an input layer, multiple hidden layers, and an output layer.
+  - Each layer is fully connected to the next (Dense layers).
+
+### Architecture Details
+- **Input layer:** 11 features (one for each selected student factor)
+- **Hidden layers:**
+    - 4 layers with 128, 64, 32, and 16 neurons
+    - Each uses ReLU activation, dropout, and batch normalization
+- **Output layer:** 1 neuron with linear activation (for regression, predicting exam score)
+- **Regularization:** Dropout (0.4) and L2 regularization
+- **Optimizer:** Adam
+- **Loss:** Huber (robust for regression)
+
+### Summary Table
+
+| Layer Type         | Details                                 |
+|--------------------|-----------------------------------------|
+| Input              | 11 features                             |
+| Hidden Layer 1     | 128 neurons, ReLU, Dropout, BatchNorm   |
+| Hidden Layer 2     | 64 neurons, ReLU, Dropout, BatchNorm    |
+| Hidden Layer 3     | 32 neurons, ReLU, Dropout, BatchNorm    |
+| Hidden Layer 4     | 16 neurons, ReLU, Dropout, BatchNorm    |
+| Output             | 1 neuron, Linear activation             |
+
+**No convolutional, recurrent, or attention-based layers are used.**
+
+This architecture is well-suited for regression tasks on tabular data, providing both predictive power and interpretability through feature importance analysis.
+
+---
+
 ## Ensemble Deployment
 - **deploy_super_ensemble.py**: Loads top models, applies ensemble strategies (median, best, stacking), and uses a meta-learner for final predictions. Can be used for batch or API-style predictions.
 

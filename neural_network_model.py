@@ -71,7 +71,7 @@ class StudentPerformanceModel:
             Compiled Keras model
         """
         if architecture is None:
-            # Deep learning architecture optimized for 13 features
+            # Deep learning architecture (input_dim is set dynamically, e.g., 11 features)
             architecture = {
                 'hidden_layers': [128, 64, 32, 16],  # 4-layer deep network
                 'dropout_rate': 0.4,  # High dropout for generalization
