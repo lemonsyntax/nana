@@ -268,4 +268,13 @@
     "Parameters": "N/A"
   },
   "category_summary": {
-    
+    "Super-Ensemble": {
+      "MAE": 1.0740039640161239,
+      "MAE_Std": 0.0,
+      "R\u00b2": 0.7337774945111197,
+      "R\u00b2_Std": 0.0,
+      "Acc_\u00b15": 99.62178517397882,
+      "Parameters": "N/A"
+    }
+  }
+}
