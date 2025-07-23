@@ -17,7 +17,9 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from tensorflow import keras
 from data_collection import DataCollector
 from data_preprocessing import DataPreprocessor
-from neural_network_model import create_model
+from neural_network_model import StudentPerformanceModel
+from sklearn.ensemble import RandomForestRegressor
+from xgboost import XGBRegressor
 
 def create_model_configs():
     """Define different model configurations to compare"""
@@ -63,49 +65,40 @@ def create_model_configs():
     return configs
 
 def train_and_evaluate_model(config_name, config, X_train, X_test, y_train, y_test):
-    """Train and evaluate a single model configuration"""
-    
+    """Train and evaluate a single DNN model configuration using StudentPerformanceModel"""
     print(f"Training {config_name}...")
-    
     # Create model
-    model = create_model(
-        input_shape=(X_train.shape[1],),
-        hidden_layers=config['hidden_layers'],
-        dropout_rate=config['dropout_rate'],
-        learning_rate=config['learning_rate'],
-        activation=config['activation'],
-        l2_reg=config['l2_reg']
-    )
-    
+    model = StudentPerformanceModel(input_dim=X_train.shape[1])
+    model.build_model({
+        'hidden_layers': config['hidden_layers'],
+        'dropout_rate': config['dropout_rate'],
+        'learning_rate': config['learning_rate'],
+        'activation': config['activation'],
+        'output_activation': 'linear',
+        'l2_reg': config['l2_reg']
+    })
     # Train model
-    history = model.fit(
-        X_train, y_train,
-        epochs=50,
-        batch_size=32,
-        validation_split=0.2,
-        verbose=0
-    )
-    
+    history = model.train(X_train, y_train, training_config={
+        'epochs': 50,
+        'batch_size': 32,
+        'validation_split': 0.2,
+        'early_stopping_patience': 10,
+        'lr_scheduler_patience': 8,
+        'min_delta': 0.001
+    })
     # Make predictions
-    y_pred = model.predict(X_test, verbose=0)
-    
+    y_pred = model.predict(X_test)
     # Calculate metrics
     mae = mean_absolute_error(y_test, y_pred)
     mse = mean_squared_error(y_test, y_pred)
     rmse = np.sqrt(mse)
     r2 = r2_score(y_test, y_pred)
-    
-    # Calculate accuracy within ±5 points
     acc_5 = np.mean(np.abs(y_test - y_pred.flatten()) <= 5) * 100
-    
-    # Calculate correlation
     corr = np.corrcoef(y_test, y_pred.flatten())[0, 1]
-    
     # Save model
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    model_path = f'models/student_performance_model_{timestamp}.keras'
-    model.save(model_path)
-    
+    model_path = f'models/student_performance_model_{config_name}_{timestamp}.keras'
+    model.save_model(model_path)
     results = {
         'config_name': config_name,
         'model_path': model_path,
@@ -125,7 +118,42 @@ def train_and_evaluate_model(config_name, config, X_train, X_test, y_train, y_te
             'val_mae': [float(x) for x in history.history['val_mae']]
         }
     }
-    
+    return results
+
+def train_and_evaluate_sklearn_model(model, model_name, X_train, X_test, y_train, y_test):
+    """Train and evaluate a scikit-learn or XGBoost regression model"""
+    print(f"Training {model_name}...")
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_test)
+    mae = mean_absolute_error(y_test, y_pred)
+    mse = mean_squared_error(y_test, y_pred)
+    rmse = np.sqrt(mse)
+    r2 = r2_score(y_test, y_pred)
+    acc_5 = np.mean(np.abs(y_test - y_pred) <= 5) * 100
+    corr = np.corrcoef(y_test, y_pred)[0, 1]
+    # Save model
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    if model_name == 'XGBoost':
+        model_path = f'models/xgboost_model_{timestamp}.json'
+        model.save_model(model_path)
+    else:
+        import joblib
+        model_path = f'models/random_forest_model_{timestamp}.joblib'
+        joblib.dump(model, model_path)
+    results = {
+        'config_name': model_name,
+        'model_path': model_path,
+        'metrics': {
+            'mae': float(mae),
+            'mse': float(mse),
+            'rmse': float(rmse),
+            'r2': float(r2),
+            'acc_5': float(acc_5),
+            'corr': float(corr)
+        },
+        'config': str(model.get_params()),
+        'training_history': None
+    }
     return results
 
 def compare_models():
@@ -141,17 +169,12 @@ def compare_models():
     df = collector.load_csv()
     
     preprocessor = DataPreprocessor()
-    X, y = preprocessor.preprocess_data(df)
-    
-    # Split data
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42
-    )
+    X_train, X_test, y_train, y_test = preprocessor.preprocess_data(df)
     
     # Get model configurations
     configs = create_model_configs()
     
-    # Train and evaluate all models
+    # Train and evaluate all neural network models
     results = {}
     
     for config_name, config in configs.items():
@@ -163,6 +186,24 @@ def compare_models():
             print(f"✅ {config_name}: MAE = {result['metrics']['mae']:.4f}")
         except Exception as e:
             print(f"❌ {config_name}: Error - {e}")
+    
+    # Add Random Forest
+    rf_model = RandomForestRegressor(n_estimators=100, random_state=42)
+    try:
+        rf_result = train_and_evaluate_sklearn_model(rf_model, 'RandomForest', X_train, X_test, y_train, y_test)
+        results['RandomForest'] = rf_result
+        print(f"✅ RandomForest: MAE = {rf_result['metrics']['mae']:.4f}")
+    except Exception as e:
+        print(f"❌ RandomForest: Error - {e}")
+    
+    # Add XGBoost
+    xgb_model = XGBRegressor(n_estimators=100, learning_rate=0.1, random_state=42, verbosity=0)
+    try:
+        xgb_result = train_and_evaluate_sklearn_model(xgb_model, 'XGBoost', X_train, X_test, y_train, y_test)
+        results['XGBoost'] = xgb_result
+        print(f"✅ XGBoost: MAE = {xgb_result['metrics']['mae']:.4f}")
+    except Exception as e:
+        print(f"❌ XGBoost: Error - {e}")
     
     # Find best model
     best_model = min(results.keys(), key=lambda x: results[x]['metrics']['mae'])

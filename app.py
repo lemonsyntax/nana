@@ -128,39 +128,30 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 @st.cache_resource
-def load_model_and_preprocessor():
+def load_model_and_preprocessor(classification=False):
     """Load the trained model and preprocessor (always use 11 features)"""
     try:
         models_dir = 'models'
         if not os.path.exists(models_dir):
             return None, None
-        
         model_files = [f for f in os.listdir(models_dir) if f.endswith('.keras')]
-        
         if not model_files:
             return None, None
-        
         latest_model = sorted(model_files)[-1]
         model_path = os.path.join(models_dir, latest_model)
-        
-        # Always use 11 features
         input_dim = 11
-        model = StudentPerformanceModel(input_dim=input_dim)
+        model = StudentPerformanceModel(input_dim=input_dim, problem_type='classification' if classification else 'regression')
         model.load_model(model_path)
-        
-        # Use enhanced preprocessor with all features
         preprocessor = DataPreprocessor()
         collector = DataCollector()
         df = collector.load_csv()
         if df is not None:
-            X_train, X_test, y_train, y_test = preprocessor.preprocess_data(df)
+            X_train, X_test, y_train, y_test = preprocessor.preprocess_data(df, classification=classification)
             st.success(f"✅ Enhanced preprocessor loaded! Using {input_dim} features.")
         else:
             st.error("❌ Could not load dataset")
             return None, None
-        
         return model, preprocessor
-        
     except Exception as e:
         st.error(f"Error loading model: {str(e)}")
         return None, None
@@ -186,8 +177,16 @@ def main():
     </div>
     """, unsafe_allow_html=True)
     
+    # Sidebar navigation
+    st.sidebar.markdown("## 📊 Navigation")
+    mode = st.sidebar.radio("Prediction Mode:", ["Regression", "Classification"], index=0)
+    page = st.sidebar.selectbox(
+        "Choose a section:",
+        ["🏠 Home", "📈 Predict Performance", "📊 Data Insights", "ℹ️ About"]
+    )
+    
     # Load model and data
-    model, preprocessor = load_model_and_preprocessor()
+    model, preprocessor = load_model_and_preprocessor(classification=(mode=="Classification"))
     df = load_data()
     
     if model is None or preprocessor is None:
@@ -195,17 +194,10 @@ def main():
         st.info("💡 Run: `python train_model.py` to train the model")
         st.stop()
     
-    # Sidebar navigation
-    st.sidebar.markdown("## 📊 Navigation")
-    page = st.sidebar.selectbox(
-        "Choose a section:",
-        ["🏠 Home", "📈 Predict Performance", "📊 Data Insights", "ℹ️ About"]
-    )
-    
     if page == "🏠 Home":
         show_home_page(df)
     elif page == "📈 Predict Performance":
-        show_prediction_page(model, preprocessor)
+        show_prediction_page(model, preprocessor, classification=(mode=="Classification"))
     elif page == "📊 Data Insights":
         show_analysis_page(df)
     elif page == "ℹ️ About":
@@ -269,97 +261,109 @@ def show_home_page(df):
         **Data Quality**: Clean dataset with comprehensive student information
         """)
 
-def show_prediction_page(model, preprocessor):
-    """Display the prediction page (updated UI, always 11 features)"""
+def show_prediction_page(model, preprocessor, classification=False):
     st.markdown("## 📈 Student Performance Prediction")
     st.markdown("""
     <div class="info-box">
-        💡 <strong>How to use:</strong> Fill in the student information below and click "Predict" to get an accurate prediction of their exam score.
+        💡 <strong>How to use:</strong> Fill in the student information below and click "Predict" to get an accurate prediction of their exam score or pass/fail status.
     </div>
     """, unsafe_allow_html=True)
-
     with st.form("prediction_form"):
         st.markdown("### Enter Student Data to Predict Performance")
-        
-        # Core academic features
         col1, col2 = st.columns(2)
         with col1:
-            hours_studied = st.number_input("Hours Studied", min_value=0.0, max_value=100.0, value=5.0, help="Enter the number of hours the student studied for the exam.")
-            previous_score = st.number_input("Previous Test Score", min_value=0.0, max_value=100.0, value=75.0, help="Enter the score from the student's previous test (0-100).")
-            attendance = st.number_input("Attendance Percentage", min_value=0.0, max_value=100.0, value=90.0, help="Enter the attendance rate in percentage (0-100%).")
-            sleep_hours = st.number_input("Sleep Hours per Night", min_value=0.0, max_value=24.0, value=8.0, help="Average hours of sleep per night")
-            tutoring = st.number_input("Tutoring Sessions", min_value=0, max_value=50, value=0, help="Number of tutoring sessions attended")
-        
+            hours_studied = st.number_input("Hours Studied", min_value=0.0, max_value=100.0, value=5.0)
+            previous_score = st.number_input("Previous Test Score", min_value=0.0, max_value=100.0, value=75.0)
+            attendance = st.number_input("Attendance Percentage", min_value=0.0, max_value=100.0, value=90.0)
+            sleep_hours = st.number_input("Sleep Hours per Night", min_value=0.0, max_value=24.0, value=8.0)
+            tutoring = st.number_input("Tutoring Sessions", min_value=0, max_value=50, value=0)
         with col2:
-            extracurricular = st.selectbox("Extra-Curricular Activities", options=[1, 0], format_func=lambda x: "Yes" if x == 1 else "No", help="Does the student participate in extra-curricular activities?")
-            parent_edu = st.selectbox("Parent's Education Level", options=[1, 2, 3, 4], format_func=lambda x: {1: 'High School', 2: 'College/Undergraduate', 3: 'Graduate', 4: 'Postgraduate'}[x], help="Highest education level of the student's parents")
-            family_income = st.selectbox("Family Income Level", options=[1, 2, 3], format_func=lambda x: {1: 'Low', 2: 'Medium', 3: 'High'}[x], help="Family income level")
-            teacher_quality = st.selectbox("Teacher Quality", options=[1, 2, 3], format_func=lambda x: {1: 'Low', 2: 'Medium', 3: 'High'}[x], help="Perceived quality of teaching")
-            peer_influence = st.selectbox("Peer Influence", options=[1, 2, 3], format_func=lambda x: {1: 'Negative', 2: 'Neutral', 3: 'Positive'}[x], help="Influence of peers on academic performance")
-            internet_access = st.selectbox("Internet Access", options=[1, 0], format_func=lambda x: "Yes" if x == 1 else "No", help="Does the student have reliable internet access?")
-        
+            extracurricular = st.selectbox("Extra-Curricular Activities", options=[1, 0], format_func=lambda x: "Yes" if x == 1 else "No")
+            parent_edu = st.selectbox("Parent's Education Level", options=[1, 2, 3, 4], format_func=lambda x: {1: 'High School', 2: 'College/Undergraduate', 3: 'Graduate', 4: 'Postgraduate'}[x])
+            family_income = st.selectbox("Family Income Level", options=[1, 2, 3], format_func=lambda x: {1: 'Low', 2: 'Medium', 3: 'High'}[x])
+            teacher_quality = st.selectbox("Teacher Quality", options=[1, 2, 3], format_func=lambda x: {1: 'Low', 2: 'Medium', 3: 'High'}[x])
+            peer_influence = st.selectbox("Peer Influence", options=[1, 2, 3], format_func=lambda x: {1: 'Negative', 2: 'Neutral', 3: 'Positive'}[x])
+            internet_access = st.selectbox("Internet Access", options=[1, 0], format_func=lambda x: "Yes" if x == 1 else "No")
         submitted = st.form_submit_button("🎯 Predict Performance")
-
         if submitted:
-            try:
-                # Always use all 11 features in the correct order
-                input_data = {
-                    'Hours_Studied': hours_studied,
-                    'Previous_Scores': previous_score,
-                    'Attendance': attendance,
-                    'Extracurricular_Activities': extracurricular,
-                    'Parental_Education_Level': parent_edu,
-                    'Sleep_Hours': sleep_hours,
-                    'Tutoring_Sessions': tutoring,
-                    'Family_Income': family_income,
-                    'Teacher_Quality': teacher_quality,
-                    'Peer_Influence': peer_influence,
-                    'Internet_Access': internet_access
-                }
-                input_df = pd.DataFrame([input_data])
-                X_transformed = preprocessor.transform_new_data(input_df)
-                prediction = model.predict(X_transformed)[0][0]
-                # Display results with better formatting
-                st.markdown("### 🎯 Prediction Results")
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.metric("📊 Predicted Exam Score", f"{prediction:.1f}")
-                with col2:
-                    # Grade classification
-                    if prediction >= 90:
-                        grade = "A"
-                        grade_color = "grade-a"
-                    elif prediction >= 80:
-                        grade = "B"
-                        grade_color = "grade-b"
-                    elif prediction >= 70:
-                        grade = "C"
-                        grade_color = "grade-c"
-                    elif prediction >= 60:
-                        grade = "D"
-                        grade_color = "grade-d"
+            errors = []
+            if hours_studied < 0 or hours_studied > 100:
+                errors.append("Hours Studied must be between 0 and 100.")
+            if previous_score < 0 or previous_score > 100:
+                errors.append("Previous Test Score must be between 0 and 100.")
+            if attendance < 0 or attendance > 100:
+                errors.append("Attendance Percentage must be between 0 and 100.")
+            if sleep_hours < 0 or sleep_hours > 24:
+                errors.append("Sleep Hours per Night must be between 0 and 24.")
+            if tutoring < 0 or tutoring > 50:
+                errors.append("Tutoring Sessions must be between 0 and 50.")
+            if errors:
+                for err in errors:
+                    st.error(err)
+            else:
+                try:
+                    input_data = {
+                        'Hours_Studied': hours_studied,
+                        'Previous_Scores': previous_score,
+                        'Attendance': attendance,
+                        'Extracurricular_Activities': extracurricular,
+                        'Parental_Education_Level': parent_edu,
+                        'Sleep_Hours': sleep_hours,
+                        'Tutoring_Sessions': tutoring,
+                        'Family_Income': family_income,
+                        'Teacher_Quality': teacher_quality,
+                        'Peer_Influence': peer_influence,
+                        'Internet_Access': internet_access
+                    }
+                    input_df = pd.DataFrame([input_data])
+                    X_transformed = preprocessor.transform_new_data(input_df)
+                    prediction = model.predict(X_transformed)[0][0]
+                    if classification:
+                        st.markdown("### 🎯 Classification Result")
+                        label = "Pass" if prediction >= 0.5 else "Fail"
+                        st.metric("Predicted Class", label)
+                        st.metric("Probability (Pass)", f"{prediction:.2f}")
+                        if hasattr(model, 'history') and model.history is not None:
+                            st.info("Model was trained for classification. Metrics: Accuracy, Precision, Recall, F1-score available in training logs.")
                     else:
-                        grade = "F"
-                        grade_color = "grade-f"
-                    st.markdown(f"""
-                    <div class="prediction-card {grade_color}">
-                        <h3>Grade: {grade}</h3>
-                        <p>Performance Level</p>
-                    </div>
-                    """, unsafe_allow_html=True)
-                # Show insights
-                st.markdown("### 💡 Insights")
-                if prediction >= 80:
-                    st.success("🎉 Excellent performance predicted! This student shows strong academic potential.")
-                elif prediction >= 70:
-                    st.info("👍 Good performance predicted. There's room for improvement with focused effort.")
-                elif prediction >= 60:
-                    st.warning("⚠️ Average performance predicted. Consider additional support and study strategies.")
-                else:
-                    st.error("📚 Below average performance predicted. Intensive support and intervention recommended.")
-            except Exception as e:
-                st.error(f"❌ Error making prediction: {str(e)}")
-                st.info("💡 This might be due to missing features. Please ensure all required data is provided.")
+                        st.markdown("### 🎯 Prediction Results")
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            st.metric("📊 Predicted Exam Score", f"{prediction:.1f}")
+                        with col2:
+                            if prediction >= 90:
+                                grade = "A"
+                                grade_color = "grade-a"
+                            elif prediction >= 80:
+                                grade = "B"
+                                grade_color = "grade-b"
+                            elif prediction >= 70:
+                                grade = "C"
+                                grade_color = "grade-c"
+                            elif prediction >= 60:
+                                grade = "D"
+                                grade_color = "grade-d"
+                            else:
+                                grade = "F"
+                                grade_color = "grade-f"
+                            st.markdown(f"""
+                            <div class="prediction-card {grade_color}">
+                                <h3>Grade: {grade}</h3>
+                                <p>Performance Level</p>
+                            </div>
+                            """, unsafe_allow_html=True)
+                        st.markdown("### 💡 Insights")
+                        if prediction >= 80:
+                            st.success("🎉 Excellent performance predicted! This student shows strong academic potential.")
+                        elif prediction >= 70:
+                            st.info("👍 Good performance predicted. There's room for improvement with focused effort.")
+                        elif prediction >= 60:
+                            st.warning("⚠️ Average performance predicted. Consider additional support and study strategies.")
+                        else:
+                            st.error("📚 Below average performance predicted. Intensive support and intervention recommended.")
+                except Exception as e:
+                    st.error(f"❌ Error making prediction: {str(e)}")
+                    st.info("💡 This might be due to missing features. Please ensure all required data is provided.")
 
 def show_analysis_page(df):
     """Display the analysis page"""

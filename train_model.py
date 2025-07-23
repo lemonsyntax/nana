@@ -88,7 +88,7 @@ class ModelTrainer:
             }
         }
     
-    def run_pipeline(self) -> dict:
+    def run_pipeline(self, classification: bool = False) -> dict:
         """
         Run the complete training pipeline
         
@@ -109,17 +109,18 @@ class ModelTrainer:
             # Step 2: Data Preprocessing
             print("\n2. DATA PREPROCESSING")
             print("-" * 40)
-            X_train, X_test, y_train, y_test = self._preprocess_data(df)
+            X_train, X_test, y_train, y_test = self._preprocess_data(df, classification=classification)
+            self.results['feature_names'] = self.preprocessor.get_feature_names()
             
             # Step 3: Model Training
             print("\n3. MODEL TRAINING")
             print("-" * 40)
-            self._train_model(X_train, y_train)
+            self._train_model(X_train, y_train, classification=classification)
             
             # Step 4: Model Evaluation
             print("\n4. MODEL EVALUATION")
             print("-" * 40)
-            self._evaluate_model(X_test, y_test)
+            self._evaluate_model(X_test, y_test, classification=classification)
             
             # Step 5: Performance Analysis
             print("\n5. PERFORMANCE ANALYSIS")
@@ -148,14 +149,15 @@ class ModelTrainer:
         print(f"Target variable: {info['target_column']}")
         return df
     
-    def _preprocess_data(self, df: pd.DataFrame) -> tuple:
+    def _preprocess_data(self, df: pd.DataFrame, classification: bool = False) -> tuple:
         """Preprocess the dataset (selected features only)"""
         print("Preprocessing data (selected features)...")
         X_train, X_test, y_train, y_test = self.preprocessor.preprocess_data(
             df,
             target_column='Exam_Score',
             test_size=self.config['data']['test_size'],
-            random_state=self.config['data']['random_state']
+            random_state=self.config['data']['random_state'],
+            classification=classification
         )
         self.results['feature_names'] = self.preprocessor.get_feature_names()
         
@@ -164,7 +166,7 @@ class ModelTrainer:
             'train_samples': X_train.shape[0],
             'test_samples': X_test.shape[0],
             'features': X_train.shape[1],
-            'target_column': 'Exam_Score',
+            'target_column': 'Pass_Fail' if classification else 'Exam_Score',
             'test_size': self.config['data']['test_size'],
             'random_state': self.config['data']['random_state']
         }
@@ -173,14 +175,14 @@ class ModelTrainer:
         print(f"Features: {X_train.shape[1]} columns")
         return X_train, X_test, y_train, y_test
     
-    def _train_model(self, X_train: np.ndarray, y_train: np.ndarray) -> None:
+    def _train_model(self, X_train: np.ndarray, y_train: np.ndarray, classification: bool = False) -> None:
         """Train the neural network model"""
         print("Initializing neural network model...")
         
         # Initialize model
         self.model = StudentPerformanceModel(
             input_dim=X_train.shape[1],
-            problem_type=self.config['model']['problem_type']
+            problem_type='classification' if classification else self.config['model']['problem_type']
         )
         
         # Build model
@@ -200,7 +202,7 @@ class ModelTrainer:
         
         print("Model training completed!")
     
-    def _evaluate_model(self, X_test: np.ndarray, y_test: np.ndarray) -> None:
+    def _evaluate_model(self, X_test: np.ndarray, y_test: np.ndarray, classification: bool = False) -> None:
         """Evaluate the trained model"""
         print("Evaluating model performance...")
         
@@ -389,13 +391,13 @@ def main():
             'random_state': 42
         },
         'model': {
-            'problem_type': 'regression',
+            'problem_type': 'classification',  # Set to classification
             'architecture': {
                 'hidden_layers': [64, 32, 16],
                 'dropout_rate': 0.3,
                 'learning_rate': 0.001,
                 'activation': 'relu',
-                'output_activation': 'linear'
+                'output_activation': 'sigmoid'
             }
         },
         'training': {
@@ -414,7 +416,7 @@ def main():
     
     # Create trainer and run pipeline
     trainer = ModelTrainer(config)
-    results = trainer.run_pipeline()
+    results = trainer.run_pipeline(classification=True)
     
     print("\n" + "=" * 80)
     print("TRAINING COMPLETED SUCCESSFULLY!")
