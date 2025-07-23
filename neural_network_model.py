@@ -3,23 +3,20 @@
 Deep Neural Network Model for Student Performance Prediction
 
 This module provides:
-1. Deep neural network architecture (4-layer network)
-2. Advanced training with early stopping and learning rate scheduling
-3. Comprehensive model evaluation and performance metrics
-4. Model saving and loading
-5. Feature importance analysis for deep networks
+1. Medium-balanced deep neural network architecture (3 hidden layers: 128, 64, 32 neurons)
+2. Swish activation, moderate dropout (0.25), and L2 regularization (0.008)
+3. Advanced training with early stopping and learning rate scheduling
+4. Comprehensive model evaluation and performance metrics
+5. Model saving, loading, and feature importance analysis
 """
 
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-from tensorflow import keras
 from tensorflow.keras import layers, callbacks
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 import matplotlib.pyplot as plt
 import seaborn as sns
-import joblib
 import os
 from typing import Dict, Any, Tuple, Optional, List
 import warnings
@@ -31,6 +28,8 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # Suppress TF logging
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'  # Suppress oneDNN warnings
 warnings.filterwarnings('ignore', category=DeprecationWarning, module='tensorflow')
 warnings.filterwarnings('ignore', category=FutureWarning, module='tensorflow')
+
+import shap
 
 class StudentPerformanceModel:
     """Deep neural network model for student performance regression (exam score prediction)"""
@@ -70,12 +69,12 @@ class StudentPerformanceModel:
         """
         if architecture is None:
             architecture = {
-                'hidden_layers': [128, 64, 32, 16],
-                'dropout_rate': 0.4,
-                'learning_rate': 0.0005,
-                'activation': 'relu',
+                'hidden_layers': [128, 64, 32],
+                'dropout_rate': 0.25,
+                'learning_rate': 0.0008,
+                'activation': 'swish',
                 'output_activation': 'linear',
-                'l2_reg': 0.01
+                'l2_reg': 0.008
             }
         model = tf.keras.Sequential()
         model.add(layers.Dense(
@@ -390,6 +389,17 @@ class StudentPerformanceModel:
         
         return summary
 
+def plot_shap_summary(model, X, feature_names):
+    """Generate a SHAP summary plot for the trained model."""
+    print("Generating SHAP summary plot...")
+    explainer = shap.DeepExplainer(model.model, X[:100])  # Use a subset for background
+    shap_values = explainer.shap_values(X[:100])
+    shap.summary_plot(shap_values, X[:100], feature_names=feature_names, show=False)
+    import matplotlib.pyplot as plt
+    plt.savefig('plots/shap_summary.png', dpi=300, bbox_inches='tight')
+    plt.close()
+    print("SHAP summary plot saved to plots/shap_summary.png")
+
 def main():
     """Test the deep neural network model (regression only)"""
     from data_collection import DataCollector
@@ -401,16 +411,17 @@ def main():
     df = collector.load_csv()
     preprocessor = DataPreprocessor()
     X_train, X_test, y_train, y_test = preprocessor.preprocess_data(df)
-    model = StudentPerformanceModel(input_dim=X_train.shape[1])
-    architecture = {
-        'hidden_layers': [128, 64, 32, 16],
-        'dropout_rate': 0.4,
-        'learning_rate': 0.0005,
-        'activation': 'relu',
+    # Define the medium_balanced configuration
+    medium_balanced_config = {
+        'hidden_layers': [128, 64, 32],
+        'dropout_rate': 0.25,
+        'learning_rate': 0.0008,
+        'activation': 'swish',
         'output_activation': 'linear',
-        'l2_reg': 0.01
+        'l2_reg': 0.008
     }
-    model.build_model(architecture)
+    model = StudentPerformanceModel(input_dim=X_train.shape[1])
+    model.build_model(medium_balanced_config)
     training_config = {
         'epochs': 50,
         'batch_size': 64,
@@ -430,6 +441,8 @@ def main():
     sorted_importance = sorted(importance.items(), key=lambda x: x[1], reverse=True)
     for i, (feature, score) in enumerate(sorted_importance[:10], 1):
         print(f"  {i}. {feature}: {score:.4f}")
+    # Generate SHAP summary plot
+    plot_shap_summary(model, X_test, feature_names)
     print(f"\n✅ Deep neural network model test completed successfully!")
 
 if __name__ == "__main__":

@@ -174,9 +174,11 @@ def compare_models():
     # Get model configurations
     configs = create_model_configs()
     
-    # Train and evaluate all neural network models
+    # Only use the 'medium_balanced' config
+    configs = {'medium_balanced': configs['medium_balanced']}
+
+    # Train and evaluate only the medium_balanced neural network model
     results = {}
-    
     for config_name, config in configs.items():
         try:
             result = train_and_evaluate_model(
@@ -186,24 +188,8 @@ def compare_models():
             print(f"✅ {config_name}: MAE = {result['metrics']['mae']:.4f}")
         except Exception as e:
             print(f"❌ {config_name}: Error - {e}")
-    
-    # Add Random Forest
-    rf_model = RandomForestRegressor(n_estimators=100, random_state=42)
-    try:
-        rf_result = train_and_evaluate_sklearn_model(rf_model, 'RandomForest', X_train, X_test, y_train, y_test)
-        results['RandomForest'] = rf_result
-        print(f"✅ RandomForest: MAE = {rf_result['metrics']['mae']:.4f}")
-    except Exception as e:
-        print(f"❌ RandomForest: Error - {e}")
-    
-    # Add XGBoost
-    xgb_model = XGBRegressor(n_estimators=100, learning_rate=0.1, random_state=42, verbosity=0)
-    try:
-        xgb_result = train_and_evaluate_sklearn_model(xgb_model, 'XGBoost', X_train, X_test, y_train, y_test)
-        results['XGBoost'] = xgb_result
-        print(f"✅ XGBoost: MAE = {xgb_result['metrics']['mae']:.4f}")
-    except Exception as e:
-        print(f"❌ XGBoost: Error - {e}")
+
+    # Skip Random Forest and XGBoost for this run
     
     # Find best model
     best_model = min(results.keys(), key=lambda x: results[x]['metrics']['mae'])
